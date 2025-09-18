@@ -14,13 +14,11 @@ var db *gorm.DB
 func InitDB(filepath string) error {
 	var err error
 
-	// Настройки для лучшей производительности SQLite
 	config := &gorm.Config{
 		// Отключаем логирование для продакшена (можно включить для отладки)
 		// Logger: logger.Default.LogMode(logger.Silent),
 	}
 
-	// Настройки SQLite для конкурентного доступа
 	sqliteConfig := sqlite.Open(filepath + "?_journal_mode=WAL&_synchronous=NORMAL&_cache_size=1000&_foreign_keys=ON")
 
 	db, err = gorm.Open(sqliteConfig, config)
@@ -28,18 +26,15 @@ func InitDB(filepath string) error {
 		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
-	// Настройка пула соединений
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("ошибка получения DB: %w", err)
 	}
 
-	// Настройки пула соединений для конкурентного доступа
-	sqlDB.SetMaxOpenConns(25)   // Максимум открытых соединений
-	sqlDB.SetMaxIdleConns(10)   // Максимум неактивных соединений
-	sqlDB.SetConnMaxLifetime(0) // Время жизни соединения (0 = без ограничений)
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(0)
 
-	// Тестируем соединение с таймаутом
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -69,7 +64,6 @@ func InitDB(filepath string) error {
 	return nil
 }
 
-// GetDBWithTimeout возвращает контекст с таймаутом для операций с БД
 func GetDBWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
 }

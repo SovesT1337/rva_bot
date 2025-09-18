@@ -103,9 +103,6 @@ func CreateStartKeyboard() inlineKeyboardMarkup {
 				{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
 			},
 			{
-				{Text: "📊 Мой рейтинг ELO", CallbackData: "Raiting"},
-			},
-			{
 				{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
 			},
 			{
@@ -319,7 +316,6 @@ func CreateTrackSelectionKeyboard(tracks []database.Track) inlineKeyboardMarkup 
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к трассам", CallbackData: "tracksMenu"},
 	})
@@ -344,7 +340,6 @@ func CreateTrackEditKeyboard(trackId uint) inlineKeyboardMarkup {
 func CreateTrackDeletionKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой трассы (максимум 3 на ряд для удаления)
 	for i := 0; i < len(tracks); i += 3 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+3 && j < len(tracks); j++ {
@@ -361,7 +356,6 @@ func CreateTrackDeletionKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к трассам", CallbackData: "tracksMenu"},
 	})
@@ -380,11 +374,9 @@ func CreateTrackDeletionConfirmationKeyboard(trackId uint) inlineKeyboardMarkup 
 	}
 }
 
-// Клавиатуры для регистрации на тренировки
 func CreateTrainingSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой тренировки (максимум 2 на ряд)
 	for i := 0; i < len(trainings); i += 2 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+2 && j < len(trainings); j++ {
@@ -398,7 +390,6 @@ func CreateTrainingSelectionKeyboard(trainings []database.Training) inlineKeyboa
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🏠 Главное меню", CallbackData: "start"},
 	})
@@ -417,7 +408,6 @@ func CreateTrainingRegistrationConfirmationKeyboard(trainingId uint) inlineKeybo
 	}
 }
 
-// Клавиатуры для тренеров (подтверждение/отклонение заявок)
 func CreateTrainingApprovalKeyboard(registrationId uint) inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -429,11 +419,9 @@ func CreateTrainingApprovalKeyboard(registrationId uint) inlineKeyboardMarkup {
 	}
 }
 
-// Клавиатуры для создания тренировок
 func CreateTrainerSelectionForTrainingKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждого тренера (максимум 3 на ряд)
 	for i := 0; i < len(trainers); i += 3 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+3 && j < len(trainers); j++ {
@@ -450,7 +438,6 @@ func CreateTrainerSelectionForTrainingKeyboard(trainers []database.Trainer) inli
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопки "Назад" и "Отменить"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к расписанию", CallbackData: "scheduleMenu"},
 		{Text: "❌ Отменить", CallbackData: "cancel"},
@@ -462,7 +449,6 @@ func CreateTrainerSelectionForTrainingKeyboard(trainers []database.Trainer) inli
 func CreateTrackSelectionForTrainingKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой трассы (максимум 3 на ряд)
 	for i := 0; i < len(tracks); i += 3 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+3 && j < len(tracks); j++ {

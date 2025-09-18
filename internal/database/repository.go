@@ -1,6 +1,5 @@
 package database
 
-// Интерфейс для работы с контентом
 type ContentRepositoryInterface interface {
 	CreateTrainer(content *Trainer) (uint, error)
 	GetTrainerByID(ID uint) (*Trainer, error)
@@ -11,7 +10,6 @@ type ContentRepositoryInterface interface {
 	UpdateTrainer(id uint, trainer *Trainer) error
 	DeleteTrainer(id uint) error
 
-	// Методы для работы с администраторами
 	CreateAdmin(admin *Admin) (uint, error)
 	GetAdminByID(id uint) (*Admin, error)
 	GetAdminByChatId(chatId int) (*Admin, error)
@@ -27,7 +25,6 @@ type ContentRepositoryInterface interface {
 	UpdateTrackInfo(id uint, info string) (uint, error)
 	DeleteTrack(id uint) error
 
-	// Методы для работы с пользователями
 	CreateUser(user *User) (uint, error)
 	GetUserByID(id uint) (*User, error)
 	GetUserByChatId(chatId int) (*User, error)
@@ -35,7 +32,6 @@ type ContentRepositoryInterface interface {
 	UpdateUser(id uint, user *User) error
 	DeleteUser(id uint) error
 
-	// Методы для работы с тренировками
 	CreateTraining(content *Training) (uint, error)
 	GetTrainingById(id uint) (*Training, error)
 	GetTrainings() ([]Training, error)
@@ -43,7 +39,6 @@ type ContentRepositoryInterface interface {
 	UpdateTraining(id uint, training *Training) error
 	DeleteTraining(id uint) error
 
-	// Методы для работы с регистрациями на тренировки
 	CreateTrainingRegistration(registration *TrainingRegistration) (uint, error)
 	GetTrainingRegistrationByID(id uint) (*TrainingRegistration, error)
 	GetTrainingRegistrationsByTrainingID(trainingId uint) ([]TrainingRegistration, error)
@@ -52,13 +47,11 @@ type ContentRepositoryInterface interface {
 	DeleteTrainingRegistration(id uint) error
 	GetTrainingRegistrationByUserAndTraining(userId uint, trainingId uint) (*TrainingRegistration, error)
 
-	// Методы для пошаговой записи на тренировки
 	GetActiveTrainingsByTrackAndTrainer(trackId, trainerId uint) ([]Training, error)
 	GetTrainersByTrack(trackId uint) ([]Trainer, error)
 	GetTracksWithActiveTrainings() ([]Track, error)
 }
 
-// Создание экземпляра репозитория
 func NewContentRepository() ContentRepositoryInterface {
 	return &ContentRepository{}
 }

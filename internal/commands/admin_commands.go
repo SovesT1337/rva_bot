@@ -12,9 +12,7 @@ import (
 	"x.localhost/rvabot/internal/telegram"
 )
 
-// Админка
 func Admin(botUrl string, chatId int, repo database.ContentRepositoryInterface) states.State {
-	// Проверяем права администратора
 	if !IsAdmin(chatId, repo) {
 		telegram.SendMessage(botUrl, chatId, "🚫 <b>Доступ запрещен</b>\n\n"+
 			"❌ У вас нет прав администратора для доступа к этой панели.\n\n"+
@@ -32,7 +30,6 @@ func Admin(botUrl string, chatId int, repo database.ContentRepositoryInterface) 
 	return states.SetAdminKeyboard()
 }
 
-// Проверка прав администратора по ChatId
 func IsAdmin(chatId int, repo database.ContentRepositoryInterface) bool {
 	admin, err := repo.GetAdminByChatId(chatId)
 	if err != nil {
@@ -48,13 +45,11 @@ func IsAdmin(chatId int, repo database.ContentRepositoryInterface) bool {
 	return true
 }
 
-// Команды для работы с тренерами
 func CreateTrainer(botUrl string, chatId int, messageId int) states.State {
 	telegram.EditMessage(botUrl, chatId, messageId, "👨‍🏫 <b>Добавление нового тренера</b>\n\n"+
 		"📝 <b>Шаг 1 из 3:</b> Введите ФИО тренера\n\n"+
 		"💡 <i>Пример: Иванов Иван Иванович</i>", telegram.CreateBackToTrainersMenuKeyboard())
 
-	// Создаем временные данные тренера
 	tempData := &states.TempTrainerData{}
 	state := states.SetEnterTrainerName(0)
 	return state.SetTempTrainerData(tempData)
@@ -63,7 +58,6 @@ func CreateTrainer(botUrl string, chatId int, messageId int) states.State {
 func SetTrainerName(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	name := update.Message.Text
 
-	// Получаем временные данные из состояния и обновляем их
 	tempData := state.GetTempTrainerData()
 	tempData.Name = name
 
@@ -78,7 +72,6 @@ func SetTrainerName(botUrl string, chatId int, update telegram.Update, repo data
 func SetTrainerTgId(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	tgid := update.Message.Text
 
-	// Получаем временные данные из состояния и обновляем их
 	tempData := state.GetTempTrainerData()
 	tempData.TgId = tgid
 
@@ -93,7 +86,6 @@ func SetTrainerTgId(botUrl string, chatId int, update telegram.Update, repo data
 func SetTrainerChatId(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	chatIdStr := update.Message.Text
 
-	// Парсим Chat ID
 	trainerChatId, err := strconv.Atoi(chatIdStr)
 	if err != nil {
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Неверный формат Chat ID</b>\n\n"+
@@ -103,7 +95,6 @@ func SetTrainerChatId(botUrl string, chatId int, update telegram.Update, repo da
 		return state
 	}
 
-	// Получаем временные данные из состояния и обновляем их
 	tempData := state.GetTempTrainerData()
 	tempData.ChatId = trainerChatId
 
@@ -118,11 +109,9 @@ func SetTrainerChatId(botUrl string, chatId int, update telegram.Update, repo da
 func SetTrainerInfo(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	info := update.Message.Text
 
-	// Получаем временные данные из состояния и обновляем их
 	tempData := state.GetTempTrainerData()
 	tempData.Info = info
 
-	// Показываем подтверждение создания тренера
 	message := fmt.Sprintf("✅ <b>Подтверждение создания тренера</b>\n\n"+
 		"📋 <b>Проверьте данные:</b>\n\n"+
 		"👤 <b>ФИО:</b> %s\n"+
@@ -140,7 +129,6 @@ func SetTrainerInfo(botUrl string, chatId int, update telegram.Update, repo data
 func ConfirmTrainerCreation(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, tempData *states.TempTrainerData) states.State {
 	log.Printf("Creating trainer: %s (TgId: %s, ChatId: %d)", tempData.Name, tempData.TgId, tempData.ChatId)
 
-	// Создаем тренера в базе данных
 	trainer := &database.Trainer{
 		Name:   tempData.Name,
 		TgId:   tempData.TgId,
@@ -173,7 +161,6 @@ func CancelTrainerCreation(botUrl string, chatId int, messageId int) states.Stat
 	return states.SetAdminKeyboard()
 }
 
-// Команды для редактирования тренеров
 func EditTrainer(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface) states.State {
 	trainers, err := repo.GetTrainers()
 	if err != nil {
@@ -236,7 +223,6 @@ func DeleteTrainer(botUrl string, chatId int, messageId int, repo database.Conte
 	return states.SetSelectTrainerToEdit()
 }
 
-// Форматирование списка тренеров для администратора
 func formatTrainersListForAdmin(trainers []database.Trainer) string {
 	if len(trainers) == 0 {
 		return "👥 <b>Список тренеров пуст</b>\n\n" +
@@ -264,7 +250,6 @@ func formatTrainersListForAdmin(trainers []database.Trainer) string {
 	return builder.String()
 }
 
-// Функции редактирования тренеров
 func SelectTrainerToEdit(botUrl string, chatId int, messageId int, trainerId uint, repo database.ContentRepositoryInterface) states.State {
 	trainer, err := repo.GetTrainerByID(trainerId)
 	if err != nil {
@@ -404,7 +389,6 @@ func ExecuteTrainerDeletion(botUrl string, chatId int, messageId int, trainerId 
 	return states.SetAdminKeyboard()
 }
 
-// Функции для трасс
 func CreateTrack(botUrl string, chatId int, messageId int) states.State {
 	telegram.EditMessage(botUrl, chatId, messageId, "🏁 <b>Создание новой трассы</b>\n\n"+
 		"📝 Введите название трассы:\n\n"+
@@ -416,7 +400,6 @@ func SetTrackName(botUrl string, chatId int, update telegram.Update, repo databa
 	name := update.Message.Text
 	log.Printf("User %d setting track name: %s", chatId, name)
 
-	// Создаем временные данные трассы
 	tempData := &states.TempTrackData{Name: name}
 	newState := states.SetEnterTrackInfo(0).SetTempTrackData(tempData)
 
@@ -429,7 +412,6 @@ func SetTrackInfo(botUrl string, chatId int, update telegram.Update, repo databa
 	info := update.Message.Text
 	log.Printf("User %d setting track info: %s", chatId, info)
 
-	// Получаем временные данные трассы
 	tempData := state.GetTempTrackData()
 	tempData.Info = info
 
@@ -533,7 +515,6 @@ func DeleteTrack(botUrl string, chatId int, messageId int, repo database.Content
 	return states.SetAdminKeyboard()
 }
 
-// Заглушки для функций расписания
 func ViewSchedule(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface) states.State {
 	trainings, err := repo.GetTrainings()
 	if err != nil {
@@ -662,7 +643,7 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 	training := &database.Training{
 		TrainerID:       tempData.TrainerID,
 		TrackID:         tempData.TrackID,
-		Time:            time.Now(), // TODO: Parse tempData.Date
+		Time:            time.Now(),
 		MaxParticipants: tempData.MaxParticipants,
 		IsActive:        true,
 	}
@@ -682,7 +663,6 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 	return states.SetAdminKeyboard()
 }
 
-// Дополнительные функции для трасс
 func SelectTrackToEdit(botUrl string, chatId int, messageId int, trackId uint, repo database.ContentRepositoryInterface) states.State {
 	track, err := repo.GetTrackByID(trackId)
 	if err != nil {
@@ -796,7 +776,6 @@ func ExecuteTrackDeletion(botUrl string, chatId int, messageId int, trackId uint
 	return states.SetAdminKeyboard()
 }
 
-// Дополнительные функции для тренировок
 func EditTraining(botUrl string, chatId int, messageId int, trainingId uint, repo database.ContentRepositoryInterface) states.State {
 	training, err := repo.GetTrainingById(trainingId)
 	if err != nil {
@@ -859,7 +838,6 @@ func DeleteTraining(botUrl string, chatId int, messageId int, trainingId uint, r
 	return states.SetAdminKeyboard()
 }
 
-// Вспомогательные функции для форматирования
 func formatTracksListForAdmin(tracks []database.Track) string {
 	if len(tracks) == 0 {
 		return "📭 Трассы не найдены"

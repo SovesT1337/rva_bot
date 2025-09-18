@@ -16,12 +16,10 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 	offSet := 0
 
 	userStates := make(map[int]states.State)
-	var statesMutex sync.RWMutex // Мьютекс для защиты userStates
+	var statesMutex sync.RWMutex
 
-	// Канал для обработки обновлений
-	updateChan := make(chan telegram.Update, 100) // Буфер на 100 обновлений
+	updateChan := make(chan telegram.Update, 100)
 
-	// Запускаем воркер для обработки обновлений
 	go processUpdates(botUrl, repo, userStates, &statesMutex, updateChan)
 
 	for {
@@ -32,12 +30,10 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 		}
 
 		for _, update := range updates {
-			// Отправляем обновление в канал для обработки
 			select {
 			case updateChan <- update:
 				log.Printf("Update %d queued for processing", update.UpdateId)
 			default:
-				// Канал переполнен, логируем предупреждение
 				log.Printf("WARNING: Update channel full! Dropping update %d", update.UpdateId)
 			}
 			offSet = update.UpdateId + 1
@@ -45,7 +41,6 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 	}
 }
 
-// processUpdates обрабатывает обновления из канала
 func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 	userStates map[int]states.State, statesMutex *sync.RWMutex, updateChan <-chan telegram.Update) {
 
@@ -59,7 +54,6 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 
 		log.Printf("Processing %s update %d from chat %d", updateType, update.UpdateId, chatId)
 
-		// Безопасное чтение и обновление состояния
 		statesMutex.Lock()
 		if _, ok := userStates[chatId]; !ok {
 			userStates[chatId] = states.SetStart()
@@ -68,10 +62,8 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 		currentState := userStates[chatId]
 		statesMutex.Unlock()
 
-		// Обрабатываем обновление
 		newState := respond(botUrl, update, currentState, repo)
 
-		// Безопасно сохраняем новое состояние
 		statesMutex.Lock()
 		userStates[chatId] = newState
 		statesMutex.Unlock()
@@ -97,7 +89,6 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 	case states.StateAdminKeyboard, states.StateStartKeyboard:
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Тренер
 	case states.StateEnterTrainerName:
 		return commands.SetTrainerName(botUrl, chatId, update, repo, state)
 
@@ -111,12 +102,9 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return commands.SetTrainerInfo(botUrl, chatId, update, repo, state)
 
 	case states.StateConfirmTrainerCreation:
-		// Обработка подтверждения будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Состояния редактирования тренеров
 	case states.StateSelectTrainerToEdit:
-		// Обработка выбора тренера будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 	case states.StateEditTrainerName:
 		return commands.SetEditTrainerName(botUrl, chatId, update, repo, state.GetID())
@@ -128,14 +116,11 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return commands.SetEditTrainerInfo(botUrl, chatId, update, repo, state.GetID())
 
 	case states.StateConfirmTrainerEdit:
-		// Обработка будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateConfirmTrainerDelete:
-		// Обработка будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Состояния создания трасс
 	case states.StateEnterTrackName:
 		return commands.SetTrackName(botUrl, chatId, update, repo, state)
 
@@ -143,12 +128,9 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return commands.SetTrackInfo(botUrl, chatId, update, repo, state)
 
 	case states.StateConfirmTrackCreation:
-		// Обработка подтверждения будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Состояния редактирования трасс
 	case states.StateSelectTrackToEdit:
-		// Обработка выбора трассы будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateEditTrackName:
@@ -158,33 +140,24 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return commands.SetEditTrackInfo(botUrl, chatId, update, repo, state.GetID())
 
 	case states.StateConfirmTrackEdit:
-		// Обработка будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateConfirmTrackDelete:
-		// Обработка будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Расписание
-
-	// Регистрация пользователя
 	case states.StateEnterUserName:
 		return commands.SetUserName(botUrl, chatId, update, repo, state)
 
 	case states.StateConfirmUserRegistration:
-		// Обработка подтверждения будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Создание тренировки
 	case states.StateEnterTrainingTrainer:
-		// Обработка выбора тренера будет в callback'ах
 		if update.CallbackQuery != nil {
 			return handleCallback(botUrl, update.CallbackQuery, repo, state)
 		}
 		return states.SetError()
 
 	case states.StateEnterTrainingTrack:
-		// Обработка выбора трассы будет в callback'ах
 		if update.CallbackQuery != nil {
 			return handleCallback(botUrl, update.CallbackQuery, repo, state)
 		}
@@ -197,29 +170,21 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return commands.SetTrainingMaxParticipants(botUrl, chatId, update, repo, state)
 
 	case states.StateConfirmTrainingCreation:
-		// Обработка подтверждения будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Регистрация на тренировку
 	case states.StateSelectTrainingToRegister:
-		// Обработка выбора тренировки будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateConfirmTrainingRegistration:
-		// Обработка подтверждения будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
-	// Новые состояния для пошаговой записи на тренировки
 	case states.StateSelectTrackForRegistration:
-		// Обработка выбора трассы будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateSelectTrainerForRegistration:
-		// Обработка выбора тренера будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateSelectTrainingTimeForRegistration:
-		// Обработка выбора времени тренировки будет в callback'ах
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 
 	case states.StateStart:
@@ -247,7 +212,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 
 	log.Printf("Callback from user %d: %s", chatId, data)
 
-	// Обработка динамических callback'ов для редактирования тренеров
 	if strings.HasPrefix(data, "selectTrainer_") {
 		trainerIdStr := strings.TrimPrefix(data, "selectTrainer_")
 		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
@@ -290,7 +254,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		}
 	}
 
-	// Обработка динамических callback'ов для редактирования трасс
 	if strings.HasPrefix(data, "selectTrack_") {
 		trackIdStr := strings.TrimPrefix(data, "selectTrack_")
 		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
@@ -326,7 +289,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		}
 	}
 
-	// Обработка динамических callback'ов для регистрации на тренировки
 	if strings.HasPrefix(data, "selectTraining_") {
 		trainingIdStr := strings.TrimPrefix(data, "selectTraining_")
 		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
@@ -341,7 +303,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		}
 	}
 
-	// Обработка callback'ов для тренеров (подтверждение/отклонение заявок)
 	if strings.HasPrefix(data, "approveRegistration_") {
 		registrationIdStr := strings.TrimPrefix(data, "approveRegistration_")
 		if registrationId, err := strconv.ParseUint(registrationIdStr, 10, 32); err == nil {
@@ -356,7 +317,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		}
 	}
 
-	// Обработка callback'ов для создания тренировок
 	if strings.HasPrefix(data, "selectTrainerForTraining_") {
 		trainerIdStr := strings.TrimPrefix(data, "selectTrainerForTraining_")
 		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
@@ -392,7 +352,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		}
 	}
 
-	// Обработка callback'ов для пошаговой записи на тренировки
 	if strings.HasPrefix(data, "selectTrackForRegistration_") {
 		trackIdStr := strings.TrimPrefix(data, "selectTrackForRegistration_")
 		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
@@ -415,7 +374,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	}
 
 	switch data {
-	// Навигация
 	case "start":
 		return commands.ReturnToStart(botUrl, chatId, messageId)
 	case "help":
@@ -426,7 +384,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 			"/admin - админ-панель", telegram.CreateNavigationKeyboard())
 		return states.SetStartKeyboard()
 	case "admin":
-		// Проверяем права администратора
 		if !commands.IsAdmin(chatId, repo) {
 			telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Доступ запрещен</b>\n"+
 				"Нет прав администратора.", telegram.CreateBaseKeyboard())
@@ -437,7 +394,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 			"", telegram.CreateAdminKeyboard())
 		return states.SetAdminKeyboard()
 
-	// Админские меню
 	case "trainersMenu":
 		telegram.EditMessage(botUrl, chatId, messageId, "👨‍🏫 Управление тренерами\n\n"+
 			"", telegram.CreateTrainersMenuKeyboard())
@@ -458,7 +414,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 			"", telegram.CreateScheduleMenuKeyboard())
 		return states.SetAdminKeyboard()
 
-	// Тренеры
 	case "createTrainer":
 		return commands.CreateTrainer(botUrl, chatId, messageId)
 	case "viewTrainers":
@@ -468,7 +423,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	case "deleteTrainer":
 		return commands.DeleteTrainer(botUrl, chatId, messageId, repo)
 
-	// Трассы
 	case "createTrack":
 		return commands.CreateTrack(botUrl, chatId, messageId)
 	case "viewTracks":
@@ -478,7 +432,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	case "deleteTrack":
 		return commands.DeleteTrack(botUrl, chatId, messageId, repo)
 
-	// Расписание
 	case "createSchedule":
 		return commands.CreateTraining(botUrl, chatId, messageId, repo)
 	case "viewSchedule":
@@ -486,7 +439,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	case "editSchedule":
 		return commands.EditSchedule(botUrl, chatId, messageId, repo)
 
-	// Пользовательские функции
 	case "BookTraining":
 		return commands.StartTrainingRegistration(botUrl, chatId, messageId, repo)
 
@@ -505,16 +457,11 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	case "infoFormat":
 		return commands.InfoFormat(botUrl, chatId, messageId)
 
-	case "Raiting":
-		return commands.ViewELORating(botUrl, chatId, messageId, repo)
-
-	// Навигация назад при записи на тренировки
 	case "backToTrackSelection":
 		return commands.BackToTrackSelection(botUrl, chatId, messageId, repo, state)
 	case "backToTrainerSelection":
 		return commands.BackToTrainerSelection(botUrl, chatId, messageId, repo, state)
 
-	// Подтверждение создания тренера
 	case "confirm":
 		switch state.Type {
 		case states.StateConfirmTrainerCreation:
@@ -588,8 +535,6 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	return states.SetStart()
 }
 
-// getStateName возвращает читаемое имя состояния
-// TODO: Move this to states package
 func getStateName(stateType states.StateType) string {
 	switch stateType {
 	case states.StateStart:

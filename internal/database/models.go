@@ -8,7 +8,7 @@ type Trainer struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
 	TgId      string
-	ChatId    int `gorm:"uniqueIndex"` // Telegram Chat ID для уведомлений тренера
+	ChatId    int `gorm:"uniqueIndex"` 		
 	Info      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -18,8 +18,8 @@ type Admin struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
 	TgId      string
-	ChatId    int  `gorm:"uniqueIndex"` // Telegram Chat ID для проверки прав администратора
-	IsActive  bool // Активен ли администратор
+	ChatId    int  `gorm:"uniqueIndex"` 
+	IsActive  bool 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -27,9 +27,8 @@ type Admin struct {
 type User struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
-	ChatId    int  `gorm:"uniqueIndex"` // Telegram Chat ID пользователя
-	IsActive  bool // Активен ли пользователь
-	ELORating int  `gorm:"default:1200"` // Рейтинг ELO (по умолчанию 1200)
+	ChatId    int  `gorm:"uniqueIndex"` 
+	IsActive  bool 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -47,8 +46,8 @@ type Training struct {
 	TrainerID       uint
 	TrackID         uint
 	Time            time.Time
-	MaxParticipants int  // Максимальное количество участников
-	IsActive        bool // Активна ли тренировка для регистрации
+	MaxParticipants int 
+	IsActive        bool 
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -57,7 +56,7 @@ type TrainingRegistration struct {
 	ID         uint `gorm:"primaryKey"`
 	TrainingID uint
 	UserID     uint
-	Status     string // "pending", "confirmed", "rejected"
+	Status     string 
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

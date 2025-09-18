@@ -69,7 +69,6 @@ func AnswerCallbackQuery(botUrl string, callbackID string) error {
 	return nil
 }
 
-// EscapeHTML экранирует HTML-символы в тексте для безопасного отображения
 func EscapeHTML(text string) string {
 	return html.EscapeString(text)
 }
