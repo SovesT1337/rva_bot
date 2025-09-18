@@ -52,10 +52,6 @@ type ContentRepositoryInterface interface {
 	DeleteTrainingRegistration(id uint) error
 	GetTrainingRegistrationByUserAndTraining(userId uint, trainingId uint) (*TrainingRegistration, error)
 
-	// Методы для работы со спортивными тестами
-	GetActiveSportsTests() ([]SportsTest, error)
-	InitDefaultSportsTests() error
-
 	// Методы для пошаговой записи на тренировки
 	GetActiveTrainingsByTrackAndTrainer(trackId, trainerId uint) ([]Training, error)
 	GetTrainersByTrack(trackId uint) ([]Trainer, error)

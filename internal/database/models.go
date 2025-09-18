@@ -61,23 +61,3 @@ type TrainingRegistration struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
-
-type SportsTest struct {
-	ID          uint `gorm:"primaryKey"`
-	Name        string
-	Description string
-	MaxScore    int  // Максимальный балл
-	IsActive    bool // Активен ли тест
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
-type TestRegistration struct {
-	ID        uint `gorm:"primaryKey"`
-	TestID    uint
-	UserID    uint
-	Status    string // "pending", "confirmed", "rejected", "completed"
-	Score     int    // Результат теста
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}

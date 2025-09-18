@@ -65,12 +65,6 @@ func InitDB(filepath string) error {
 	if err := db.AutoMigrate(&TrainingRegistration{}); err != nil {
 		return fmt.Errorf("ошибка миграции: %w", err)
 	}
-	if err := db.AutoMigrate(&SportsTest{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
-	}
-	if err := db.AutoMigrate(&TestRegistration{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
-	}
 
 	return nil
 }

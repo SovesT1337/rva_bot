@@ -675,77 +675,6 @@ func (r *ContentRepository) DeleteAdmin(id uint) error {
 	return nil
 }
 
-// ============================================================================
-// МЕТОДЫ ДЛЯ РАБОТЫ СО СПОРТИВНЫМИ ТЕСТАМИ
-// ============================================================================
-
-// GetActiveSportsTests получает только активные спортивные тесты
-func (r *ContentRepository) GetActiveSportsTests() ([]SportsTest, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var tests []SportsTest
-	result := db.WithContext(ctx).Where("is_active = ?", true).Find(&tests)
-	if result.Error != nil {
-		log.Printf("ERROR: Failed to get active sports tests: %v", result.Error)
-		return nil, result.Error
-	}
-
-	return tests, nil
-}
-
-// InitDefaultSportsTests инициализирует базовые спортивные тесты
-func (r *ContentRepository) InitDefaultSportsTests() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Проверяем, есть ли уже тесты
-	var count int64
-	db.WithContext(ctx).Model(&SportsTest{}).Count(&count)
-	if count > 0 {
-		return nil // Тесты уже инициализированы
-	}
-
-	// Создаем базовые тесты
-	defaultTests := []SportsTest{
-		{
-			Name:        "Тест на выносливость",
-			Description: "Бег на 5 км на время. Проверяет общую физическую подготовку и выносливость.",
-			MaxScore:    100,
-			IsActive:    true,
-		},
-		{
-			Name:        "Тест на скорость",
-			Description: "Спринт 100 метров. Проверяет скоростные качества и реакцию.",
-			MaxScore:    100,
-			IsActive:    true,
-		},
-		{
-			Name:        "Тест на координацию",
-			Description: "Полоса препятствий. Проверяет координацию движений и ловкость.",
-			MaxScore:    100,
-			IsActive:    true,
-		},
-		{
-			Name:        "Тест на силу",
-			Description: "Подтягивания, отжимания, приседания. Проверяет силовые показатели.",
-			MaxScore:    100,
-			IsActive:    true,
-		},
-	}
-
-	for _, test := range defaultTests {
-		result := db.WithContext(ctx).Create(&test)
-		if result.Error != nil {
-			log.Printf("ERROR: Failed to create default sports test %s: %v", test.Name, result.Error)
-			return result.Error
-		}
-		log.Printf("Default sports test created: %s", test.Name)
-	}
-
-	return nil
-}
-
 // GetActiveTrainingsByTrackAndTrainer получает активные тренировки по трассе и тренеру
 func (r *ContentRepository) GetActiveTrainingsByTrackAndTrainer(trackId, trainerId uint) ([]Training, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -802,7 +731,3 @@ func (r *ContentRepository) GetTracksWithActiveTrainings() ([]Track, error) {
 
 	return tracks, nil
 }
-
-// ============================================================================
-// МЕТОДЫ ДЛЯ РАБОТЫ С РАСПИСАНИЕМ
-// ============================================================================

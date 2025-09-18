@@ -26,9 +26,9 @@ func main() {
 	repo = database.NewContentRepository()
 
 	// Инициализируем базовые спортивные тесты
-	if err := repo.(*database.ContentRepository).InitDefaultSportsTests(); err != nil {
-		log.Printf("Warning: Failed to initialize default sports tests: %v", err)
-	}
+	// if err := repo.(*database.ContentRepository).InitDefaultSportsTests(); err != nil {
+	// 	log.Printf("Warning: Failed to initialize default sports tests: %v", err)
+	// }
 
 	handler.BotLoop(botUrl, repo)
 

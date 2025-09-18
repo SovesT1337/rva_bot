@@ -590,32 +590,6 @@ func CreateTrainingEditKeyboard(trainingId uint) inlineKeyboardMarkup {
 	}
 }
 
-// Клавиатуры для спортивных тестов
-func CreateSportsTestSelectionKeyboard(tests []database.SportsTest) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	// Создаем кнопки для каждого теста (максимум 2 на ряд)
-	for i := 0; i < len(tests); i += 2 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+2 && j < len(tests); j++ {
-			test := tests[j]
-			buttonText := fmt.Sprintf("🏆 %d", j+1)
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTest_%d", test.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	// Добавляем кнопку "Назад"
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🏠 Главное меню", CallbackData: "start"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
-}
-
 // Клавиатуры для пошаговой записи на тренировки
 func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
