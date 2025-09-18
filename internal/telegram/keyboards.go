@@ -6,14 +6,12 @@ import (
 	"x.localhost/rvabot/internal/database"
 )
 
-// Создает пустую клавиатуру
 func CreateEmptyKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{},
 	}
 }
 
-// Создает базовую клавиатуру с кнопкой "Назад"
 func CreateBaseKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -24,7 +22,6 @@ func CreateBaseKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопками "Назад" и "Помощь"
 func CreateNavigationKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -36,7 +33,6 @@ func CreateNavigationKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой возврата к админ-панели
 func CreateBackToAdminKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -47,7 +43,6 @@ func CreateBackToAdminKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой возврата к информации
 func CreateBackToInfoKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -58,7 +53,6 @@ func CreateBackToInfoKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой возврата к меню тренеров
 func CreateBackToTrainersMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -69,7 +63,6 @@ func CreateBackToTrainersMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой возврата к меню трасс
 func CreateBackToTracksMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -80,7 +73,6 @@ func CreateBackToTracksMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой возврата к меню расписания
 func CreateBackToScheduleMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -91,8 +83,7 @@ func CreateBackToScheduleMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой отмены для создания тренера
-func CreateCancelTrainerCreationKeyboard() inlineKeyboardMarkup {
+func CreateCancelKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
 			{
@@ -102,40 +93,6 @@ func CreateCancelTrainerCreationKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру с кнопкой отмены для создания трассы
-func CreateCancelTrackCreationKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "❌ Отмена", CallbackData: "cancel"},
-			},
-		},
-	}
-}
-
-// Создает клавиатуру с кнопкой отмены для создания тренировки
-func CreateCancelTrainingCreationKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "❌ Отмена", CallbackData: "cancel"},
-			},
-		},
-	}
-}
-
-// Создает клавиатуру с кнопкой отмены для регистрации пользователя
-func CreateCancelUserRegistrationKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "❌ Отмена", CallbackData: "cancel"},
-			},
-		},
-	}
-}
-
-// Создает главное меню для пользователей
 func CreateStartKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -158,7 +115,6 @@ func CreateStartKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает админскую клавиатуру
 func CreateAdminKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -176,7 +132,6 @@ func CreateAdminKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает меню управления тренерами
 func CreateTrainersMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -195,7 +150,6 @@ func CreateTrainersMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает меню управления трассами
 func CreateTracksMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -214,7 +168,6 @@ func CreateTracksMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает меню управления расписанием
 func CreateScheduleMenuKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -234,7 +187,6 @@ func CreateScheduleMenuKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру информации
 func CreateInfoKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -257,7 +209,6 @@ func CreateInfoKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Создает клавиатуру подтверждения
 func CreateConfirmationKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -269,11 +220,9 @@ func CreateConfirmationKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-// Клавиатуры для редактирования тренеров
 func CreateTrainerSelectionKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждого тренера (максимум 5 на ряд)
 	for i := 0; i < len(trainers); i += 5 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+5 && j < len(trainers); j++ {
@@ -290,7 +239,6 @@ func CreateTrainerSelectionKeyboard(trainers []database.Trainer) inlineKeyboardM
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к тренерам", CallbackData: "trainersMenu"},
 	})
@@ -318,7 +266,6 @@ func CreateTrainerEditKeyboard(trainerId uint) inlineKeyboardMarkup {
 func CreateTrainerDeletionKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждого тренера (максимум 3 на ряд для удаления)
 	for i := 0; i < len(trainers); i += 3 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+3 && j < len(trainers); j++ {
@@ -335,7 +282,6 @@ func CreateTrainerDeletionKeyboard(trainers []database.Trainer) inlineKeyboardMa
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к тренерам", CallbackData: "trainersMenu"},
 	})
@@ -354,11 +300,9 @@ func CreateDeletionConfirmationKeyboard(trainerId uint) inlineKeyboardMarkup {
 	}
 }
 
-// Клавиатуры для управления трассами
 func CreateTrackSelectionKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой трассы (максимум 5 на ряд)
 	for i := 0; i < len(tracks); i += 5 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+5 && j < len(tracks); j++ {
@@ -535,7 +479,6 @@ func CreateTrackSelectionForTrainingKeyboard(tracks []database.Track) inlineKeyb
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопки "Назад" и "Отменить"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к расписанию", CallbackData: "scheduleMenu"},
 		{Text: "❌ Отменить", CallbackData: "cancel"},
@@ -544,11 +487,9 @@ func CreateTrackSelectionForTrainingKeyboard(tracks []database.Track) inlineKeyb
 	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
-// Клавиатуры для редактирования тренировок
 func CreateTrainingEditSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой тренировки (максимум 2 на ряд)
 	for i := 0; i < len(trainings); i += 2 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+2 && j < len(trainings); j++ {
@@ -562,7 +503,6 @@ func CreateTrainingEditSelectionKeyboard(trainings []database.Training) inlineKe
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к расписанию", CallbackData: "scheduleMenu"},
 	})
@@ -590,11 +530,9 @@ func CreateTrainingEditKeyboard(trainingId uint) inlineKeyboardMarkup {
 	}
 }
 
-// Клавиатуры для пошаговой записи на тренировки
 func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой трассы (максимум 2 на ряд)
 	for i := 0; i < len(tracks); i += 2 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+2 && j < len(tracks); j++ {
@@ -611,7 +549,6 @@ func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inline
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🏠 Главное меню", CallbackData: "start"},
 	})
@@ -622,7 +559,6 @@ func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inline
 func CreateTrainerSelectionForRegistrationKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждого тренера (максимум 2 на ряд)
 	for i := 0; i < len(trainers); i += 2 {
 		var row []inlineKeyboardButton
 		for j := i; j < i+2 && j < len(trainers); j++ {
@@ -639,7 +575,6 @@ func CreateTrainerSelectionForRegistrationKeyboard(trainers []database.Trainer) 
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к выбору трассы", CallbackData: "backToTrackSelection"},
 	})
@@ -650,9 +585,7 @@ func CreateTrainerSelectionForRegistrationKeyboard(trainers []database.Trainer) 
 func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	// Создаем кнопки для каждой тренировки (максимум 1 на ряд для лучшей читаемости)
 	for _, training := range trainings {
-		// Получаем количество зарегистрированных участников
 		buttonText := fmt.Sprintf("📅 %s", training.Time.Format("02.01 15:04"))
 		row := []inlineKeyboardButton{
 			{
@@ -663,7 +596,6 @@ func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKe
 		buttons = append(buttons, row)
 	}
 
-	// Добавляем кнопку "Назад"
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к выбору тренера", CallbackData: "backToTrainerSelection"},
 	})

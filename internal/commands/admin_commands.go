@@ -69,7 +69,7 @@ func SetTrainerName(botUrl string, chatId int, update telegram.Update, repo data
 
 	telegram.SendMessage(botUrl, chatId, "👨‍🏫 <b>Добавление нового тренера</b>\n\n"+
 		"📱 <b>Шаг 2 из 4:</b> Введите Telegram ID тренера\n"+
-		"💡 <i>Пример: @username или 123456789</i>", telegram.CreateCancelTrainerCreationKeyboard())
+		"💡 <i>Пример: @username или 123456789</i>", telegram.CreateCancelKeyboard())
 
 	newState := states.SetEnterTrainerTgId(0)
 	return newState.SetTempTrainerData(tempData)
@@ -84,7 +84,7 @@ func SetTrainerTgId(botUrl string, chatId int, update telegram.Update, repo data
 
 	telegram.SendMessage(botUrl, chatId, "👨‍🏫 <b>Добавление нового тренера</b>\n\n"+
 		"💬 <b>Шаг 3 из 4:</b> Введите Chat ID тренера\n"+
-		"💡 <i>Пример: 123456789 (числовой ID чата)</i>", telegram.CreateCancelTrainerCreationKeyboard())
+		"💡 <i>Пример: 123456789 (числовой ID чата)</i>", telegram.CreateCancelKeyboard())
 
 	newState := states.SetEnterTrainerChatId(0)
 	return newState.SetTempTrainerData(tempData)
@@ -99,7 +99,7 @@ func SetTrainerChatId(botUrl string, chatId int, update telegram.Update, repo da
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Неверный формат Chat ID</b>\n\n"+
 			"💡 <b>Введите числовой ID чата:</b>\n"+
 			"📱 <i>Пример: 123456789</i>\n\n"+
-			"🔄 Попробуйте еще раз:", telegram.CreateCancelTrainerCreationKeyboard())
+			"🔄 Попробуйте еще раз:", telegram.CreateCancelKeyboard())
 		return state
 	}
 
@@ -109,7 +109,7 @@ func SetTrainerChatId(botUrl string, chatId int, update telegram.Update, repo da
 
 	telegram.SendMessage(botUrl, chatId, "👨‍🏫 <b>Добавление нового тренера</b>\n\n"+
 		"📝 <b>Шаг 4 из 4:</b> Введите информацию о тренере\n"+
-		"💡 <i>Пример: Опытный тренер по бегу, стаж 5 лет</i>", telegram.CreateCancelTrainerCreationKeyboard())
+		"💡 <i>Пример: Опытный тренер по бегу, стаж 5 лет</i>", telegram.CreateCancelKeyboard())
 
 	newState := states.SetEnterTrainerInfo(0)
 	return newState.SetTempTrainerData(tempData)
