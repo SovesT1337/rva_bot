@@ -1,52 +1,51 @@
 package states
 
-type StateType int
+type StateType string
 
 const (
-	StateStart StateType = iota
-	StateError
-	StateStartKeyboard
-	StateAdminKeyboard
+	StateStart         = "StateStart"
+	StateError         = "StateError"
+	StateStartKeyboard = "StateStartKeyboard"
+	StateAdminKeyboard = "StateAdminKeyboard"
 
-	StateEnterTrainerName
-	StateEnterTrainerTgId
-	StateEnterTrainerChatId
-	StateEnterTrainerInfo
-	StateConfirmTrainerCreation
+	StateEnterTrainerName       = "StateEnterTrainerName"
+	StateEnterTrainerTgId       = "StateEnterTrainerTgId"
+	StateEnterTrainerChatId     = "StateEnterTrainerChatId"
+	StateEnterTrainerInfo       = "StateEnterTrainerInfo"
+	StateConfirmTrainerCreation = "StateConfirmTrainerCreation"
 
-	StateSelectTrainerToEdit
-	StateEditTrainerName
-	StateEditTrainerTgId
-	StateEditTrainerInfo
-	StateConfirmTrainerEdit
-	StateConfirmTrainerDelete
+	StateSelectTrainerToEdit  = "StateSelectTrainerToEdit"
+	StateEditTrainerName      = "StateEditTrainerName"
+	StateEditTrainerTgId      = "StateEditTrainerTgId"
+	StateEditTrainerInfo      = "StateEditTrainerInfo"
+	StateConfirmTrainerEdit   = "StateConfirmTrainerEdit"
+	StateConfirmTrainerDelete = "StateConfirmTrainerDelete"
 
-	StateEnterTrackName
-	StateEnterTrackInfo
-	StateConfirmTrackCreation
+	StateEnterTrackName       = "StateEnterTrackName"
+	StateEnterTrackInfo       = "StateEnterTrackInfo"
+	StateConfirmTrackCreation = "StateConfirmTrackCreation"
 
-	StateSelectTrackToEdit
-	StateEditTrackName
-	StateEditTrackInfo
-	StateConfirmTrackEdit
-	StateConfirmTrackDelete
+	StateSelectTrackToEdit  = "StateSelectTrackToEdit"
+	StateEditTrackName      = "StateEditTrackName"
+	StateEditTrackInfo      = "StateEditTrackInfo"
+	StateConfirmTrackEdit   = "StateConfirmTrackEdit"
+	StateConfirmTrackDelete = "StateConfirmTrackDelete"
 
+	StateEnterUserName           = "StateEnterUserName"
+	StateConfirmUserRegistration = "StateConfirmUserRegistration"
 
-	StateEnterUserName
-	StateConfirmUserRegistration
+	StateEnterTrainingTrainer         = "StateEnterTrainingTrainer"
+	StateEnterTrainingTrack           = "StateEnterTrainingTrack"
+	StateEnterTrainingDate            = "StateEnterTrainingDate"
+	StateEnterTrainingMaxParticipants = "StateEnterTrainingMaxParticipants"
+	StateConfirmTrainingCreation      = "StateConfirmTrainingCreation"
 
-	StateEnterTrainingTrainer
-	StateEnterTrainingTrack
-	StateEnterTrainingDate
-	StateEnterTrainingMaxParticipants
-	StateConfirmTrainingCreation
+	StateSelectTrainingToRegister    = "StateSelectTrainingToRegister"
+	StateConfirmTrainingRegistration = "StateConfirmTrainingRegistration"
 
-	StateSelectTrainingToRegister
-	StateConfirmTrainingRegistration
-
-	StateSelectTrackForRegistration
-	StateSelectTrainerForRegistration
-	StateSelectTrainingTimeForRegistration
+	StateSelectTrackForRegistration        = "StateSelectTrackForRegistration"
+	StateSelectTrainerForRegistration      = "StateSelectTrainerForRegistration"
+	StateSelectTrainingTimeForRegistration = "StateSelectTrainingTimeForRegistration"
 )
 
 type State struct {

@@ -68,131 +68,67 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 		userStates[chatId] = newState
 		statesMutex.Unlock()
 
-		log.Printf("User %d state updated: %s", chatId, getStateName(newState.Type))
+		log.Printf("User %d state updated: %s", chatId, newState.Type)
 	}
 }
 
 func respond(botUrl string, update telegram.Update, state states.State, repo database.ContentRepositoryInterface) states.State {
 	chatId := update.Message.Chat.ChatId
 
-	if update.Message.Text == "/help" {
+	switch update.Message.Text {
+	case "/help":
 		return commands.Help(botUrl, chatId)
-	}
-	if update.Message.Text == "/start" {
+	case "/start":
 		return commands.Start(botUrl, chatId)
-	}
-	if update.Message.Text == "/admin" {
+	case "/admin":
 		return commands.Admin(botUrl, chatId, repo)
 	}
 
-	switch state.Type {
-	case states.StateAdminKeyboard, states.StateStartKeyboard:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
+	handlers := map[states.StateType]func() states.State{
+		states.StateAdminKeyboard: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateStartKeyboard: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
 
-	case states.StateEnterTrainerName:
-		return commands.SetTrainerName(botUrl, chatId, update, repo, state)
+		states.StateEnterTrainerName:       func() states.State { return commands.SetTrainerName(botUrl, chatId, update, repo, state) },
+		states.StateEnterTrainerTgId:       func() states.State { return commands.SetTrainerTgId(botUrl, chatId, update, repo, state) },
+		states.StateEnterTrainerChatId:     func() states.State { return commands.SetTrainerChatId(botUrl, chatId, update, repo, state) },
+		states.StateEnterTrainerInfo:       func() states.State { return commands.SetTrainerInfo(botUrl, chatId, update, repo, state) },
+		states.StateConfirmTrainerCreation: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrainerToEdit:    func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateEditTrainerName:        func() states.State { return commands.SetEditTrainerName(botUrl, chatId, update, repo, state.GetID()) },
+		states.StateEditTrainerTgId:        func() states.State { return commands.SetEditTrainerTgId(botUrl, chatId, update, repo, state.GetID()) },
+		states.StateEditTrainerInfo:        func() states.State { return commands.SetEditTrainerInfo(botUrl, chatId, update, repo, state.GetID()) },
+		states.StateConfirmTrainerEdit:     func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateConfirmTrainerDelete:   func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
 
-	case states.StateEnterTrainerTgId:
-		return commands.SetTrainerTgId(botUrl, chatId, update, repo, state)
+		states.StateEnterTrackName:       func() states.State { return commands.SetTrackName(botUrl, chatId, update, repo, state) },
+		states.StateEnterTrackInfo:       func() states.State { return commands.SetTrackInfo(botUrl, chatId, update, repo, state) },
+		states.StateConfirmTrackCreation: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrackToEdit:    func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateEditTrackName:        func() states.State { return commands.SetEditTrackName(botUrl, chatId, update, repo, state.GetID()) },
+		states.StateEditTrackInfo:        func() states.State { return commands.SetEditTrackInfo(botUrl, chatId, update, repo, state.GetID()) },
+		states.StateConfirmTrackEdit:     func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateConfirmTrackDelete:   func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
 
-	case states.StateEnterTrainerChatId:
-		return commands.SetTrainerChatId(botUrl, chatId, update, repo, state)
+		states.StateEnterUserName:           func() states.State { return commands.SetUserName(botUrl, chatId, update, repo, state) },
+		states.StateConfirmUserRegistration: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
 
-	case states.StateEnterTrainerInfo:
-		return commands.SetTrainerInfo(botUrl, chatId, update, repo, state)
+		states.StateEnterTrainingTrainer:              func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateEnterTrainingTrack:                func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateEnterTrainingDate:                 func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateEnterTrainingMaxParticipants:      func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateConfirmTrainingCreation:           func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrainingToRegister:          func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateConfirmTrainingRegistration:       func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrackForRegistration:        func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrainerForRegistration:      func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
+		states.StateSelectTrainingTimeForRegistration: func() states.State { return handleCallback(botUrl, update.CallbackQuery, repo, state) },
 
-	case states.StateConfirmTrainerCreation:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
+		states.StateStart: func() states.State { return commands.Start(botUrl, chatId) },
+		states.StateError: func() states.State { return commands.Help(botUrl, chatId) },
+	}
 
-	case states.StateSelectTrainerToEdit:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-	case states.StateEditTrainerName:
-		return commands.SetEditTrainerName(botUrl, chatId, update, repo, state.GetID())
-
-	case states.StateEditTrainerTgId:
-		return commands.SetEditTrainerTgId(botUrl, chatId, update, repo, state.GetID())
-
-	case states.StateEditTrainerInfo:
-		return commands.SetEditTrainerInfo(botUrl, chatId, update, repo, state.GetID())
-
-	case states.StateConfirmTrainerEdit:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateConfirmTrainerDelete:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateEnterTrackName:
-		return commands.SetTrackName(botUrl, chatId, update, repo, state)
-
-	case states.StateEnterTrackInfo:
-		return commands.SetTrackInfo(botUrl, chatId, update, repo, state)
-
-	case states.StateConfirmTrackCreation:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateSelectTrackToEdit:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateEditTrackName:
-		return commands.SetEditTrackName(botUrl, chatId, update, repo, state.GetID())
-
-	case states.StateEditTrackInfo:
-		return commands.SetEditTrackInfo(botUrl, chatId, update, repo, state.GetID())
-
-	case states.StateConfirmTrackEdit:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateConfirmTrackDelete:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateEnterUserName:
-		return commands.SetUserName(botUrl, chatId, update, repo, state)
-
-	case states.StateConfirmUserRegistration:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateEnterTrainingTrainer:
-		if update.CallbackQuery != nil {
-			return handleCallback(botUrl, update.CallbackQuery, repo, state)
-		}
-		return states.SetError()
-
-	case states.StateEnterTrainingTrack:
-		if update.CallbackQuery != nil {
-			return handleCallback(botUrl, update.CallbackQuery, repo, state)
-		}
-		return states.SetError()
-
-	case states.StateEnterTrainingDate:
-		return commands.SetTrainingDate(botUrl, chatId, update, repo, state)
-
-	case states.StateEnterTrainingMaxParticipants:
-		return commands.SetTrainingMaxParticipants(botUrl, chatId, update, repo, state)
-
-	case states.StateConfirmTrainingCreation:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateSelectTrainingToRegister:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateConfirmTrainingRegistration:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateSelectTrackForRegistration:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateSelectTrainerForRegistration:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateSelectTrainingTimeForRegistration:
-		return handleCallback(botUrl, update.CallbackQuery, repo, state)
-
-	case states.StateStart:
-		return commands.Start(botUrl, chatId)
-
-	case states.StateError:
-		log.Println("Error")
-		return commands.Help(botUrl, chatId)
+	if handler, ok := handlers[state.Type]; ok {
+		return handler()
 	}
 
 	log.Println("State doestn exist: ", state)
@@ -211,257 +147,181 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	telegram.AnswerCallbackQuery(botUrl, query.ID)
 
 	log.Printf("Callback from user %d: %s", chatId, data)
-
-	if strings.HasPrefix(data, "selectTrainer_") {
-		trainerIdStr := strings.TrimPrefix(data, "selectTrainer_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.SelectTrainerToEdit(botUrl, chatId, messageId, uint(trainerId), repo)
-		}
+	prefix := ""
+	id_str := ""
+	if idx := strings.Index(data, "_"); idx != -1 {
+		prefix = data[:idx]
+		id_str = data[idx+1:]
 	}
 
-	if strings.HasPrefix(data, "editTrainerName_") {
-		trainerIdStr := strings.TrimPrefix(data, "editTrainerName_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.EditTrainerName(botUrl, chatId, messageId, uint(trainerId))
+	id := 0
+
+	if id_str != "" {
+		parsedId, err := strconv.ParseUint(id_str, 10, 32)
+		if err != nil {
+			log.Printf("Error parsing id from user %d: %s", chatId, err)
+			return states.SetError()
 		}
+		id = int(parsedId)
+	}
+	log.Printf("prefix from user %d: %s", chatId, prefix)
+
+	handlers := map[string]func() states.State{
+		"selectTrainer":      func() states.State { return commands.SelectTrainerToEdit(botUrl, chatId, messageId, uint(id), repo) },
+		"editTrainerName":    func() states.State { return commands.EditTrainerName(botUrl, chatId, messageId, uint(id)) },
+		"editTrainerTgId":    func() states.State { return commands.EditTrainerTgId(botUrl, chatId, messageId, uint(id)) },
+		"editTrainerInfo":    func() states.State { return commands.EditTrainerInfo(botUrl, chatId, messageId, uint(id)) },
+		"deleteTrainer":      func() states.State { return commands.ConfirmTrainerDeletion(botUrl, chatId, messageId, uint(id), repo) },
+		"confirmDelete":      func() states.State { return commands.ExecuteTrainerDeletion(botUrl, chatId, messageId, uint(id), repo) },
+		"selectTrack":        func() states.State { return commands.SelectTrackToEdit(botUrl, chatId, messageId, uint(id), repo) },
+		"editTrackName":      func() states.State { return commands.EditTrackName(botUrl, chatId, messageId, uint(id)) },
+		"editTrackInfo":      func() states.State { return commands.EditTrackInfo(botUrl, chatId, messageId, uint(id)) },
+		"deleteTrack":        func() states.State { return commands.ConfirmTrackDeletion(botUrl, chatId, messageId, uint(id), repo) },
+		"confirmDeleteTrack": func() states.State { return commands.ExecuteTrackDeletion(botUrl, chatId, messageId, uint(id), repo) },
+
+		"selectTraining": func() states.State {
+			return commands.ConfirmTrainingRegistration(botUrl, chatId, messageId, uint(id), repo)
+		},
+		"confirmTrainingRegistration": func() states.State {
+			return commands.ExecuteTrainingRegistration(botUrl, chatId, messageId, uint(id), repo)
+		},
+		"approveRegistration": func() states.State {
+			return commands.ApproveTrainingRegistration(botUrl, chatId, messageId, uint(id), repo)
+		},
+		"rejectRegistration": func() states.State {
+			return commands.RejectTrainingRegistration(botUrl, chatId, messageId, uint(id), repo)
+		},
+		"selectTrainerForTraining": func() states.State {
+			return commands.SetTrainingTrainer(botUrl, chatId, messageId, uint(id), repo, state)
+		},
+		"selectTrackForTraining": func() states.State {
+			return commands.SetTrainingTrack(botUrl, chatId, messageId, uint(id), repo, state)
+		},
+
+		"editTraining":         func() states.State { return commands.EditTraining(botUrl, chatId, messageId, uint(id), repo) },
+		"toggleTrainingStatus": func() states.State { return commands.ToggleTrainingStatus(botUrl, chatId, messageId, uint(id), repo) },
+		"deleteTraining":       func() states.State { return commands.DeleteTraining(botUrl, chatId, messageId, uint(id), repo) },
+		"selectTrackForRegistration": func() states.State {
+			return commands.SelectTrackForRegistration(botUrl, chatId, messageId, uint(id), repo, state)
+		},
+		"selectTrainerForRegistration": func() states.State {
+			return commands.SelectTrainerForRegistration(botUrl, chatId, messageId, uint(id), repo, state)
+		},
+		"selectTrainingTimeForRegistration": func() states.State {
+			return commands.SelectTrainingTimeForRegistration(botUrl, chatId, messageId, uint(id), repo, state)
+		},
 	}
 
-	if strings.HasPrefix(data, "editTrainerTgId_") {
-		trainerIdStr := strings.TrimPrefix(data, "editTrainerTgId_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.EditTrainerTgId(botUrl, chatId, messageId, uint(trainerId))
-		}
+	if handler, ok := handlers[prefix]; ok {
+		return handler()
 	}
 
-	if strings.HasPrefix(data, "editTrainerInfo_") {
-		trainerIdStr := strings.TrimPrefix(data, "editTrainerInfo_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.EditTrainerInfo(botUrl, chatId, messageId, uint(trainerId))
-		}
+	handlersMap := map[string]func() states.State{
+		"start": func() states.State {
+			return commands.ReturnToStart(botUrl, chatId, messageId)
+		},
+		"help": func() states.State {
+			telegram.EditMessage(botUrl, chatId, messageId, "👋 <b>RVA Academy Bot</b>\n\n"+
+				"📋 Команды:\n"+
+				"/start - главное меню\n"+
+				"/help - справка\n"+
+				"/admin - админ-панель", telegram.CreateNavigationKeyboard())
+			return states.SetStartKeyboard()
+		},
+		"admin": func() states.State {
+			if !commands.IsAdmin(chatId, repo) {
+				telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Доступ запрещен</b>\n"+
+					"Нет прав администратора.", telegram.CreateBaseKeyboard())
+				return states.SetStartKeyboard()
+			}
+			telegram.EditMessage(botUrl, chatId, messageId, "⚙️ <b>Админ-панель</b>\n"+
+				"", telegram.CreateAdminKeyboard())
+			return states.SetAdminKeyboard()
+		},
+		"trainersMenu": func() states.State {
+			telegram.EditMessage(botUrl, chatId, messageId, "👨‍🏫 Управление тренерами\n\n"+
+				"", telegram.CreateTrainersMenuKeyboard())
+			return states.SetAdminKeyboard()
+		},
+		"tracksMenu": func() states.State {
+			telegram.EditMessage(botUrl, chatId, messageId, "🏁 <b>Управление трассами</b>\n\n"+
+				"🎯 <b>Доступные действия:</b>\n"+
+				"➕ Добавление новых трасс\n"+
+				"🏁 Просмотр списка трасс\n"+
+				"✏️ Редактирование трасс\n"+
+				"🗑️ Удаление трасс\n\n"+
+				"", telegram.CreateTracksMenuKeyboard())
+			return states.SetAdminKeyboard()
+		},
+		"scheduleMenu": func() states.State {
+			telegram.EditMessage(botUrl, chatId, messageId, "📅 Управление расписанием\n\n"+
+				"", telegram.CreateScheduleMenuKeyboard())
+			return states.SetAdminKeyboard()
+		},
+		"createTrainer": func() states.State {
+			return commands.CreateTrainer(botUrl, chatId, messageId)
+		},
+		"viewTrainers": func() states.State {
+			return commands.ViewTrainers(botUrl, chatId, messageId, repo)
+		},
+		"editTrainer": func() states.State {
+			return commands.EditTrainer(botUrl, chatId, messageId, repo)
+		},
+		"deleteTrainer": func() states.State {
+			return commands.DeleteTrainer(botUrl, chatId, messageId, repo)
+		},
+		"createTrack": func() states.State {
+			return commands.CreateTrack(botUrl, chatId, messageId)
+		},
+		"viewTracks": func() states.State {
+			return commands.ViewTracks(botUrl, chatId, messageId, repo)
+		},
+		"editTrack": func() states.State {
+			return commands.EditTrack(botUrl, chatId, messageId, repo)
+		},
+		"deleteTrack": func() states.State {
+			return commands.DeleteTrack(botUrl, chatId, messageId, repo)
+		},
+		"createSchedule": func() states.State {
+			return commands.CreateTraining(botUrl, chatId, messageId, repo)
+		},
+		"viewSchedule": func() states.State {
+			return commands.ViewSchedule(botUrl, chatId, messageId, repo)
+		},
+		"editSchedule": func() states.State {
+			return commands.EditSchedule(botUrl, chatId, messageId, repo)
+		},
+		"BookTraining": func() states.State {
+			return commands.StartTrainingRegistration(botUrl, chatId, messageId, repo)
+		},
+		"Info": func() states.State {
+			return commands.Info(botUrl, chatId, messageId)
+		},
+		"infoTrainer": func() states.State {
+			return commands.InfoTrainer(botUrl, chatId, messageId, repo)
+		},
+		"infoTrack": func() states.State {
+			return commands.InfoTrack(botUrl, chatId, messageId, repo)
+		},
+		"viewScheduleUser": func() states.State {
+			return commands.ViewScheduleUser(botUrl, chatId, messageId, repo)
+		},
+		"infoFormat": func() states.State {
+			return commands.InfoFormat(botUrl, chatId, messageId)
+		},
+		"backToTrackSelection": func() states.State {
+			return commands.BackToTrackSelection(botUrl, chatId, messageId, repo, state)
+		},
+		"backToTrainerSelection": func() states.State {
+			return commands.BackToTrainerSelection(botUrl, chatId, messageId, repo, state)
+		},
 	}
 
-	if strings.HasPrefix(data, "deleteTrainer_") {
-		trainerIdStr := strings.TrimPrefix(data, "deleteTrainer_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.ConfirmTrainerDeletion(botUrl, chatId, messageId, uint(trainerId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "confirmDelete_") {
-		trainerIdStr := strings.TrimPrefix(data, "confirmDelete_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.ExecuteTrainerDeletion(botUrl, chatId, messageId, uint(trainerId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrack_") {
-		trackIdStr := strings.TrimPrefix(data, "selectTrack_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.SelectTrackToEdit(botUrl, chatId, messageId, uint(trackId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "editTrackName_") {
-		trackIdStr := strings.TrimPrefix(data, "editTrackName_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.EditTrackName(botUrl, chatId, messageId, uint(trackId))
-		}
-	}
-
-	if strings.HasPrefix(data, "editTrackInfo_") {
-		trackIdStr := strings.TrimPrefix(data, "editTrackInfo_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.EditTrackInfo(botUrl, chatId, messageId, uint(trackId))
-		}
-	}
-
-	if strings.HasPrefix(data, "deleteTrack_") {
-		trackIdStr := strings.TrimPrefix(data, "deleteTrack_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.ConfirmTrackDeletion(botUrl, chatId, messageId, uint(trackId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "confirmDeleteTrack_") {
-		trackIdStr := strings.TrimPrefix(data, "confirmDeleteTrack_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.ExecuteTrackDeletion(botUrl, chatId, messageId, uint(trackId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTraining_") {
-		trainingIdStr := strings.TrimPrefix(data, "selectTraining_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.ConfirmTrainingRegistration(botUrl, chatId, messageId, uint(trainingId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "confirmTrainingRegistration_") {
-		trainingIdStr := strings.TrimPrefix(data, "confirmTrainingRegistration_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.ExecuteTrainingRegistration(botUrl, chatId, messageId, uint(trainingId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "approveRegistration_") {
-		registrationIdStr := strings.TrimPrefix(data, "approveRegistration_")
-		if registrationId, err := strconv.ParseUint(registrationIdStr, 10, 32); err == nil {
-			return commands.ApproveTrainingRegistration(botUrl, chatId, messageId, uint(registrationId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "rejectRegistration_") {
-		registrationIdStr := strings.TrimPrefix(data, "rejectRegistration_")
-		if registrationId, err := strconv.ParseUint(registrationIdStr, 10, 32); err == nil {
-			return commands.RejectTrainingRegistration(botUrl, chatId, messageId, uint(registrationId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrainerForTraining_") {
-		trainerIdStr := strings.TrimPrefix(data, "selectTrainerForTraining_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.SetTrainingTrainer(botUrl, chatId, messageId, uint(trainerId), repo, state)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrackForTraining_") {
-		trackIdStr := strings.TrimPrefix(data, "selectTrackForTraining_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.SetTrainingTrack(botUrl, chatId, messageId, uint(trackId), repo, state)
-		}
-	}
-
-	if strings.HasPrefix(data, "editTraining_") {
-		trainingIdStr := strings.TrimPrefix(data, "editTraining_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.EditTraining(botUrl, chatId, messageId, uint(trainingId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "toggleTrainingStatus_") {
-		trainingIdStr := strings.TrimPrefix(data, "toggleTrainingStatus_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.ToggleTrainingStatus(botUrl, chatId, messageId, uint(trainingId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "deleteTraining_") {
-		trainingIdStr := strings.TrimPrefix(data, "deleteTraining_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.DeleteTraining(botUrl, chatId, messageId, uint(trainingId), repo)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrackForRegistration_") {
-		trackIdStr := strings.TrimPrefix(data, "selectTrackForRegistration_")
-		if trackId, err := strconv.ParseUint(trackIdStr, 10, 32); err == nil {
-			return commands.SelectTrackForRegistration(botUrl, chatId, messageId, uint(trackId), repo, state)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrainerForRegistration_") {
-		trainerIdStr := strings.TrimPrefix(data, "selectTrainerForRegistration_")
-		if trainerId, err := strconv.ParseUint(trainerIdStr, 10, 32); err == nil {
-			return commands.SelectTrainerForRegistration(botUrl, chatId, messageId, uint(trainerId), repo, state)
-		}
-	}
-
-	if strings.HasPrefix(data, "selectTrainingTimeForRegistration_") {
-		trainingIdStr := strings.TrimPrefix(data, "selectTrainingTimeForRegistration_")
-		if trainingId, err := strconv.ParseUint(trainingIdStr, 10, 32); err == nil {
-			return commands.SelectTrainingTimeForRegistration(botUrl, chatId, messageId, uint(trainingId), repo, state)
-		}
+	if handler, ok := handlersMap[data]; ok {
+		return handler()
 	}
 
 	switch data {
-	case "start":
-		return commands.ReturnToStart(botUrl, chatId, messageId)
-	case "help":
-		telegram.EditMessage(botUrl, chatId, messageId, "👋 <b>RVA Academy Bot</b>\n\n"+
-			"📋 Команды:\n"+
-			"/start - главное меню\n"+
-			"/help - справка\n"+
-			"/admin - админ-панель", telegram.CreateNavigationKeyboard())
-		return states.SetStartKeyboard()
-	case "admin":
-		if !commands.IsAdmin(chatId, repo) {
-			telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Доступ запрещен</b>\n"+
-				"Нет прав администратора.", telegram.CreateBaseKeyboard())
-			return states.SetStartKeyboard()
-		}
-
-		telegram.EditMessage(botUrl, chatId, messageId, "⚙️ <b>Админ-панель</b>\n"+
-			"", telegram.CreateAdminKeyboard())
-		return states.SetAdminKeyboard()
-
-	case "trainersMenu":
-		telegram.EditMessage(botUrl, chatId, messageId, "👨‍🏫 Управление тренерами\n\n"+
-			"", telegram.CreateTrainersMenuKeyboard())
-		return states.SetAdminKeyboard()
-
-	case "tracksMenu":
-		telegram.EditMessage(botUrl, chatId, messageId, "🏁 <b>Управление трассами</b>\n\n"+
-			"🎯 <b>Доступные действия:</b>\n"+
-			"➕ Добавление новых трасс\n"+
-			"🏁 Просмотр списка трасс\n"+
-			"✏️ Редактирование трасс\n"+
-			"🗑️ Удаление трасс\n\n"+
-			"", telegram.CreateTracksMenuKeyboard())
-		return states.SetAdminKeyboard()
-
-	case "scheduleMenu":
-		telegram.EditMessage(botUrl, chatId, messageId, "📅 Управление расписанием\n\n"+
-			"", telegram.CreateScheduleMenuKeyboard())
-		return states.SetAdminKeyboard()
-
-	case "createTrainer":
-		return commands.CreateTrainer(botUrl, chatId, messageId)
-	case "viewTrainers":
-		return commands.ViewTrainers(botUrl, chatId, messageId, repo)
-	case "editTrainer":
-		return commands.EditTrainer(botUrl, chatId, messageId, repo)
-	case "deleteTrainer":
-		return commands.DeleteTrainer(botUrl, chatId, messageId, repo)
-
-	case "createTrack":
-		return commands.CreateTrack(botUrl, chatId, messageId)
-	case "viewTracks":
-		return commands.ViewTracks(botUrl, chatId, messageId, repo)
-	case "editTrack":
-		return commands.EditTrack(botUrl, chatId, messageId, repo)
-	case "deleteTrack":
-		return commands.DeleteTrack(botUrl, chatId, messageId, repo)
-
-	case "createSchedule":
-		return commands.CreateTraining(botUrl, chatId, messageId, repo)
-	case "viewSchedule":
-		return commands.ViewSchedule(botUrl, chatId, messageId, repo)
-	case "editSchedule":
-		return commands.EditSchedule(botUrl, chatId, messageId, repo)
-
-	case "BookTraining":
-		return commands.StartTrainingRegistration(botUrl, chatId, messageId, repo)
-
-	case "Info":
-		return commands.Info(botUrl, chatId, messageId)
-
-	case "infoTrainer":
-		return commands.InfoTrainer(botUrl, chatId, messageId, repo)
-
-	case "infoTrack":
-		return commands.InfoTrack(botUrl, chatId, messageId, repo)
-
-	case "viewScheduleUser":
-		return commands.ViewScheduleUser(botUrl, chatId, messageId, repo)
-
-	case "infoFormat":
-		return commands.InfoFormat(botUrl, chatId, messageId)
-
-	case "backToTrackSelection":
-		return commands.BackToTrackSelection(botUrl, chatId, messageId, repo, state)
-	case "backToTrainerSelection":
-		return commands.BackToTrainerSelection(botUrl, chatId, messageId, repo, state)
-
 	case "confirm":
 		switch state.Type {
 		case states.StateConfirmTrainerCreation:
@@ -533,81 +393,4 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	}
 
 	return states.SetStart()
-}
-
-func getStateName(stateType states.StateType) string {
-	switch stateType {
-	case states.StateStart:
-		return "Start"
-	case states.StateError:
-		return "Error"
-	case states.StateStartKeyboard:
-		return "StartKeyboard"
-	case states.StateAdminKeyboard:
-		return "AdminKeyboard"
-	case states.StateEnterTrainerName:
-		return "EnterTrainerName"
-	case states.StateEnterTrainerTgId:
-		return "EnterTrainerTgId"
-	case states.StateEnterTrainerChatId:
-		return "EnterTrainerChatId"
-	case states.StateEnterTrainerInfo:
-		return "EnterTrainerInfo"
-	case states.StateConfirmTrainerCreation:
-		return "ConfirmTrainerCreation"
-	case states.StateSelectTrainerToEdit:
-		return "SelectTrainerToEdit"
-	case states.StateEditTrainerName:
-		return "EditTrainerName"
-	case states.StateEditTrainerTgId:
-		return "EditTrainerTgId"
-	case states.StateEditTrainerInfo:
-		return "EditTrainerInfo"
-	case states.StateConfirmTrainerEdit:
-		return "ConfirmTrainerEdit"
-	case states.StateConfirmTrainerDelete:
-		return "ConfirmTrainerDelete"
-	case states.StateEnterTrackName:
-		return "EnterTrackName"
-	case states.StateEnterTrackInfo:
-		return "EnterTrackInfo"
-	case states.StateConfirmTrackCreation:
-		return "ConfirmTrackCreation"
-	case states.StateSelectTrackToEdit:
-		return "SelectTrackToEdit"
-	case states.StateEditTrackName:
-		return "EditTrackName"
-	case states.StateEditTrackInfo:
-		return "EditTrackInfo"
-	case states.StateConfirmTrackEdit:
-		return "ConfirmTrackEdit"
-	case states.StateConfirmTrackDelete:
-		return "ConfirmTrackDelete"
-	case states.StateEnterUserName:
-		return "EnterUserName"
-	case states.StateConfirmUserRegistration:
-		return "ConfirmUserRegistration"
-	case states.StateEnterTrainingTrainer:
-		return "EnterTrainingTrainer"
-	case states.StateEnterTrainingTrack:
-		return "EnterTrainingTrack"
-	case states.StateEnterTrainingDate:
-		return "EnterTrainingDate"
-	case states.StateEnterTrainingMaxParticipants:
-		return "EnterTrainingMaxParticipants"
-	case states.StateConfirmTrainingCreation:
-		return "ConfirmTrainingCreation"
-	case states.StateSelectTrainingToRegister:
-		return "SelectTrainingToRegister"
-	case states.StateConfirmTrainingRegistration:
-		return "ConfirmTrainingRegistration"
-	case states.StateSelectTrackForRegistration:
-		return "SelectTrackForRegistration"
-	case states.StateSelectTrainerForRegistration:
-		return "SelectTrainerForRegistration"
-	case states.StateSelectTrainingTimeForRegistration:
-		return "SelectTrainingTimeForRegistration"
-	default:
-		return "Unknown"
-	}
 }
