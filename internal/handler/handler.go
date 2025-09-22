@@ -13,6 +13,7 @@ import (
 )
 
 func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
+
 	offSet := 0
 
 	userStates := make(map[int]states.State)
@@ -25,16 +26,16 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 	for {
 		updates, err := telegram.GetUpdates(botUrl, offSet)
 		if err != nil {
-			log.Panicln("telegram.GetUpdates error: ", err)
+			log.Panicf("Получение обновлений: критическая ошибка - %s", err)
 			continue
 		}
 
 		for _, update := range updates {
 			select {
 			case updateChan <- update:
-				log.Printf("Update %d queued for processing", update.UpdateId)
+				log.Printf("Обновление %d поставлено в очередь на обработку", update.UpdateId)
 			default:
-				log.Printf("WARNING: Update channel full! Dropping update %d", update.UpdateId)
+				log.Printf("ПРЕДУПРЕЖДЕНИЕ: Очередь обновлений переполнена! Пропускаем обновление %d", update.UpdateId)
 			}
 			offSet = update.UpdateId + 1
 		}
@@ -52,12 +53,12 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 			updateType = "callback"
 		}
 
-		log.Printf("Processing %s update %d from chat %d", updateType, update.UpdateId, chatId)
+		log.Printf("Обработка %s обновления %d от чата %d", updateType, update.UpdateId, chatId)
 
 		statesMutex.Lock()
 		if _, ok := userStates[chatId]; !ok {
 			userStates[chatId] = states.SetStart()
-			log.Printf("New user %d initialized with start state", chatId)
+			log.Printf("Новый пользователь %d инициализирован с начальным состоянием", chatId)
 		}
 		currentState := userStates[chatId]
 		statesMutex.Unlock()
@@ -68,7 +69,7 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 		userStates[chatId] = newState
 		statesMutex.Unlock()
 
-		log.Printf("User %d state updated: %s", chatId, newState.Type)
+		log.Printf("Состояние пользователя %d обновлено: %s", chatId, newState.Type)
 	}
 }
 
@@ -88,13 +89,14 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		states.StateAdminKeyboard:                     true,
 		states.StateStartKeyboard:                     true,
 		states.StateConfirmTrainerCreation:            true,
-		states.StateSelectTrainerToEdit:               true,
-		states.StateConfirmTrainerEdit:                true,
 		states.StateConfirmTrainerDelete:              true,
+		states.StateEditTrainerName:                   true,
+		states.StateEditTrainerTgId:                   true,
+		states.StateEditTrainerInfo:                   true,
 		states.StateConfirmTrackCreation:              true,
-		states.StateSelectTrackToEdit:                 true,
-		states.StateConfirmTrackEdit:                  true,
 		states.StateConfirmTrackDelete:                true,
+		states.StateEditTrackName:                     true,
+		states.StateEditTrackInfo:                     true,
 		states.StateConfirmUserRegistration:           true,
 		states.StateSetTrainingTrack:                  true,
 		states.StateSetTrainingTrainer:                true,
@@ -102,8 +104,8 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		states.StateSetTrainingEndTime:                true,
 		states.StateSetTrainingMaxParticipants:        true,
 		states.StateConfirmTrainingCreation:           true,
-		states.StateSelectTrainingToRegister:          true,
 		states.StateConfirmTrainingRegistration:       true,
+		states.StateConfirmTrainingDelete:             true,
 		states.StateSelectTrackForRegistration:        true,
 		states.StateSelectTrainerForRegistration:      true,
 		states.StateSelectTrainingTimeForRegistration: true,
@@ -137,7 +139,7 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 	}
 
-	log.Println("State doesn't exist: ", state)
+	log.Printf("Состояние не существует: %s", state)
 	return states.SetError()
 }
 
@@ -152,7 +154,7 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 
 	telegram.AnswerCallbackQuery(botUrl, query.ID)
 
-	log.Printf("Callback from user %d: %s", chatId, data)
+	log.Printf("Callback от пользователя %d: %s", chatId, data)
 
 	prefix, id := parseCallbackData(data, chatId)
 	if prefix == "" && id == -1 {
@@ -160,13 +162,11 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 	}
 
 	callbackHandlers := map[string]func() states.State{
-		"selectTrainer":      func() states.State { return commands.SelectTrainerToEdit(botUrl, chatId, messageId, uint(id), repo) },
 		"editTrainerName":    func() states.State { return commands.EditTrainerName(botUrl, chatId, messageId, uint(id)) },
 		"editTrainerTgId":    func() states.State { return commands.EditTrainerTgId(botUrl, chatId, messageId, uint(id)) },
 		"editTrainerInfo":    func() states.State { return commands.EditTrainerInfo(botUrl, chatId, messageId, uint(id)) },
 		"deleteTrainer":      func() states.State { return commands.ConfirmTrainerDeletion(botUrl, chatId, messageId, uint(id), repo) },
 		"confirmDelete":      func() states.State { return commands.ExecuteTrainerDeletion(botUrl, chatId, messageId, uint(id), repo) },
-		"selectTrack":        func() states.State { return commands.SelectTrackToEdit(botUrl, chatId, messageId, uint(id), repo) },
 		"editTrackName":      func() states.State { return commands.EditTrackName(botUrl, chatId, messageId, uint(id)) },
 		"editTrackInfo":      func() states.State { return commands.EditTrackInfo(botUrl, chatId, messageId, uint(id)) },
 		"deleteTrack":        func() states.State { return commands.ConfirmTrackDeletion(botUrl, chatId, messageId, uint(id), repo) },
@@ -191,7 +191,12 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		},
 		"editTraining":         func() states.State { return commands.EditTraining(botUrl, chatId, messageId, uint(id), repo) },
 		"toggleTrainingStatus": func() states.State { return commands.ToggleTrainingStatus(botUrl, chatId, messageId, uint(id), repo) },
-		"deleteTraining":       func() states.State { return commands.DeleteTraining(botUrl, chatId, messageId, uint(id), repo) },
+		"deleteTraining": func() states.State {
+			return commands.ConfirmTrainingDeletion(botUrl, chatId, messageId, uint(id), repo)
+		},
+		"confirmDeleteTraining": func() states.State {
+			return commands.ExecuteTrainingDeletion(botUrl, chatId, messageId, uint(id), repo)
+		},
 		"selectTrackForRegistration": func() states.State {
 			return commands.SelectTrackForRegistration(botUrl, chatId, messageId, uint(id), repo, state)
 		},
@@ -201,23 +206,21 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 		"selectTrainingTimeForRegistration": func() states.State {
 			return commands.SelectTrainingTimeForRegistration(botUrl, chatId, messageId, uint(id), repo, state)
 		},
-		"start": func() states.State { return commands.ReturnToStart(botUrl, chatId, messageId) },
+		"start": func() states.State { return commands.ReturnToStart(botUrl, chatId, messageId, repo) },
 		"help":  func() states.State { return commands.SendHelpMessage(botUrl, chatId, messageId) },
 		"admin": func() states.State {
-			if !commands.IsAdmin(chatId, repo) {
+			if !database.IsAdmin(chatId, repo) {
 				return commands.SendAccessDeniedMessage(botUrl, chatId, messageId)
 			}
 			return commands.SendAdminPanelMessage(botUrl, chatId, messageId)
 		},
-		"trainersMenu":           func() states.State { return commands.SendTrainersMenuMessage(botUrl, chatId, messageId) },
-		"tracksMenu":             func() states.State { return commands.SendTracksMenuMessage(botUrl, chatId, messageId) },
-		"scheduleMenu":           func() states.State { return commands.SendScheduleMenuMessage(botUrl, chatId, messageId) },
+		"trainersMenu":           func() states.State { return commands.SendTrainersMenuMessage(botUrl, chatId, messageId, repo) },
+		"tracksMenu":             func() states.State { return commands.SendTracksMenuMessage(botUrl, chatId, messageId, repo) },
+		"scheduleMenu":           func() states.State { return commands.SendScheduleMenuMessage(botUrl, chatId, messageId, repo) },
 		"createTrainer":          func() states.State { return commands.CreateTrainer(botUrl, chatId, messageId) },
 		"viewTrainers":           func() states.State { return commands.ViewTrainers(botUrl, chatId, messageId, repo) },
-		"editTrainer":            func() states.State { return commands.EditTrainer(botUrl, chatId, messageId, repo) },
 		"createTrack":            func() states.State { return commands.CreateTrack(botUrl, chatId, messageId) },
 		"viewTracks":             func() states.State { return commands.ViewTracks(botUrl, chatId, messageId, repo) },
-		"editTrack":              func() states.State { return commands.EditTrack(botUrl, chatId, messageId, repo) },
 		"createSchedule":         func() states.State { return commands.CreateTraining(botUrl, chatId, messageId, repo) },
 		"viewSchedule":           func() states.State { return commands.ViewSchedule(botUrl, chatId, messageId, repo) },
 		"editSchedule":           func() states.State { return commands.EditSchedule(botUrl, chatId, messageId, repo) },
@@ -264,11 +267,11 @@ func parseCallbackData(data string, chatId int) (string, int) {
 
 	parsedId, err := strconv.ParseUint(id_str, 10, 32)
 	if err != nil {
-		log.Printf("Error parsing id from user %d: %s", chatId, err)
+		log.Printf("Ошибка парсинга ID от пользователя %d: %s", chatId, err)
 		return "", -1
 	}
 
-	log.Printf("prefix from user %d: %s", chatId, prefix)
+	log.Printf("Префикс от пользователя %d: %s", chatId, prefix)
 	return prefix, int(parsedId)
 }
 
@@ -318,6 +321,15 @@ func handleCancelAction(botUrl string, chatId int, messageId int, state states.S
 		states.StateSetTrainerInfo: func() states.State {
 			return commands.SendOperationCancelledWithTrainersMenu(botUrl, chatId, messageId)
 		},
+		states.StateEditTrainerName: func() states.State {
+			return commands.SendOperationCancelledWithTrainersMenu(botUrl, chatId, messageId)
+		},
+		states.StateEditTrainerTgId: func() states.State {
+			return commands.SendOperationCancelledWithTrainersMenu(botUrl, chatId, messageId)
+		},
+		states.StateEditTrainerInfo: func() states.State {
+			return commands.SendOperationCancelledWithTrainersMenu(botUrl, chatId, messageId)
+		},
 		states.StateConfirmTrackCreation: func() states.State {
 			return commands.CancelTrackCreation(botUrl, chatId, messageId)
 		},
@@ -325,6 +337,12 @@ func handleCancelAction(botUrl string, chatId int, messageId int, state states.S
 			return commands.SendOperationCancelledWithTracksMenu(botUrl, chatId, messageId)
 		},
 		states.StateSetTrackInfo: func() states.State {
+			return commands.SendOperationCancelledWithTracksMenu(botUrl, chatId, messageId)
+		},
+		states.StateEditTrackName: func() states.State {
+			return commands.SendOperationCancelledWithTracksMenu(botUrl, chatId, messageId)
+		},
+		states.StateEditTrackInfo: func() states.State {
 			return commands.SendOperationCancelledWithTracksMenu(botUrl, chatId, messageId)
 		},
 		states.StateConfirmTrainingCreation: func() states.State {
@@ -353,6 +371,9 @@ func handleCancelAction(botUrl string, chatId int, messageId int, state states.S
 		},
 		states.StateConfirmTrainingRegistration: func() states.State {
 			return commands.SendOperationCancelledMessage(botUrl, chatId, messageId)
+		},
+		states.StateConfirmTrainingDelete: func() states.State {
+			return commands.SendOperationCancelledWithScheduleMenu(botUrl, chatId, messageId)
 		},
 	}
 

@@ -17,7 +17,7 @@ func main() {
 
 	botUrl := os.Getenv("TELEGRAM_API") + os.Getenv("TELEGRAM_TOKEN")
 
-	log.Println("Bot is running")
+	log.Println("Бот запущен")
 
 	if err := database.InitDB("rva_bot.db"); err != nil {
 		log.Fatalf("Ошибка инициализации БД: %v", err)

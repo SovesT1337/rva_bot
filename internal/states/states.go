@@ -14,21 +14,17 @@ const (
 	StateSetTrainerInfo         = "StateSetTrainerInfo"
 	StateConfirmTrainerCreation = "StateConfirmTrainerCreation"
 
-	StateSelectTrainerToEdit  = "StateSelectTrainerToEdit"
 	StateEditTrainerName      = "StateEditTrainerName"
 	StateEditTrainerTgId      = "StateEditTrainerTgId"
 	StateEditTrainerInfo      = "StateEditTrainerInfo"
-	StateConfirmTrainerEdit   = "StateConfirmTrainerEdit"
 	StateConfirmTrainerDelete = "StateConfirmTrainerDelete"
 
 	StateSetTrackName         = "StateSetTrackName"
 	StateSetTrackInfo         = "StateSetTrackInfo"
 	StateConfirmTrackCreation = "StateConfirmTrackCreation"
 
-	StateSelectTrackToEdit  = "StateSelectTrackToEdit"
 	StateEditTrackName      = "StateEditTrackName"
 	StateEditTrackInfo      = "StateEditTrackInfo"
-	StateConfirmTrackEdit   = "StateConfirmTrackEdit"
 	StateConfirmTrackDelete = "StateConfirmTrackDelete"
 
 	StateSetUserName             = "StateSetUserName"
@@ -41,8 +37,8 @@ const (
 	StateSetTrainingMaxParticipants = "StateSetTrainingMaxParticipants"
 	StateConfirmTrainingCreation    = "StateConfirmTrainingCreation"
 
-	StateSelectTrainingToRegister    = "StateSelectTrainingToRegister"
 	StateConfirmTrainingRegistration = "StateConfirmTrainingRegistration"
+	StateConfirmTrainingDelete       = "StateConfirmTrainingDelete"
 
 	StateSelectTrackForRegistration        = "StateSelectTrackForRegistration"
 	StateSelectTrainerForRegistration      = "StateSelectTrainerForRegistration"
@@ -210,10 +206,6 @@ func SetConfirmTrainerCreation() State {
 	return NewState(StateConfirmTrainerCreation, nil)
 }
 
-func SetSelectTrainerToEdit() State {
-	return NewState(StateSelectTrainerToEdit, nil)
-}
-
 func SetEditTrainerName(id uint) State {
 	return NewState(StateEditTrainerName, map[string]interface{}{"id": id})
 }
@@ -224,10 +216,6 @@ func SetEditTrainerTgId(id uint) State {
 
 func SetEditTrainerInfo(id uint) State {
 	return NewState(StateEditTrainerInfo, map[string]interface{}{"id": id})
-}
-
-func SetConfirmTrainerEdit(id uint) State {
-	return NewState(StateConfirmTrainerEdit, map[string]interface{}{"id": id})
 }
 
 func SetConfirmTrainerDelete(id uint) State {
@@ -246,20 +234,12 @@ func SetConfirmTrackCreation() State {
 	return NewState(StateConfirmTrackCreation, nil)
 }
 
-func SetSelectTrackToEdit() State {
-	return NewState(StateSelectTrackToEdit, nil)
-}
-
 func SetEditTrackName(id uint) State {
 	return NewState(StateEditTrackName, map[string]interface{}{"id": id})
 }
 
 func SetEditTrackInfo(id uint) State {
 	return NewState(StateEditTrackInfo, map[string]interface{}{"id": id})
-}
-
-func SetConfirmTrackEdit(id uint) State {
-	return NewState(StateConfirmTrackEdit, map[string]interface{}{"id": id})
 }
 
 func SetConfirmTrackDelete(id uint) State {
@@ -298,12 +278,12 @@ func SetConfirmTrainingCreation() State {
 	return NewState(StateConfirmTrainingCreation, nil)
 }
 
-func SetSelectTrainingToRegister() State {
-	return NewState(StateSelectTrainingToRegister, nil)
-}
-
 func SetConfirmTrainingRegistration(trainingId uint) State {
 	return NewState(StateConfirmTrainingRegistration, map[string]interface{}{"trainingId": trainingId})
+}
+
+func SetConfirmTrainingDelete(trainingId uint) State {
+	return NewState(StateConfirmTrainingDelete, map[string]interface{}{"id": trainingId})
 }
 
 func SetSelectTrackForRegistration() State {

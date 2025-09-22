@@ -6,12 +6,6 @@ import (
 	"x.localhost/rvabot/internal/database"
 )
 
-func CreateEmptyKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{},
-	}
-}
-
 func CreateBaseKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -93,39 +87,27 @@ func CreateCancelKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-func CreateStartKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🏃‍♂️ Записаться на тренировку", CallbackData: "BookTraining"},
-			},
-			{
-				{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
-			},
-			{
-				{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
-			},
+func CreateStartKeyboard(chatId int, repo database.ContentRepositoryInterface) inlineKeyboardMarkup {
+	keyboard := [][]inlineKeyboardButton{
+		{
+			{Text: "🏃‍♂️ Записаться на тренировку", CallbackData: "BookTraining"},
+		},
+		{
+			{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
+		},
+		{
+			{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
 		},
 	}
-}
 
-func CreateStartKeyboardForAdmin() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🏃‍♂️ Записаться на тренировку", CallbackData: "BookTraining"},
-			},
-			{
-				{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
-			},
-			{
-				{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
-			},
-			{
-				{Text: "⚙️ Админ-панель", CallbackData: "admin"},
-			},
-		},
+	// Проверяем, является ли пользователь администратором
+	if database.IsAdmin(chatId, repo) {
+		keyboard = append(keyboard, []inlineKeyboardButton{
+			{Text: "⚙️ Админ-панель", CallbackData: "admin"},
+		})
 	}
+
+	return inlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
 
 func CreateAdminKeyboard() inlineKeyboardMarkup {
@@ -145,59 +127,83 @@ func CreateAdminKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-func CreateTrainersMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "➕ Добавить тренера", CallbackData: "createTrainer"},
-				{Text: "👥 Список тренеров", CallbackData: "viewTrainers"},
-			},
-			{
-				{Text: "✏️ Редактировать", CallbackData: "editTrainer"},
-				{Text: "🗑️ Удалить", CallbackData: "deleteTrainer"},
-			},
-			{
-				{Text: "🔙 Назад к админке", CallbackData: "admin"},
-			},
-		},
+func CreateTrainersListWithActionsKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
+	var buttons [][]inlineKeyboardButton
+
+	// Добавляем кнопку "Добавить тренера" в начале
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "➕ Добавить тренера", CallbackData: "createTrainer"},
+	})
+
+	// Добавляем кнопки для каждого тренера
+	for _, trainer := range trainers {
+		buttons = append(buttons, []inlineKeyboardButton{
+			{Text: fmt.Sprintf("✏️ %s", trainer.Name), CallbackData: fmt.Sprintf("editTrainerName_%d", trainer.ID)},
+			{Text: "📱", CallbackData: fmt.Sprintf("editTrainerTgId_%d", trainer.ID)},
+			{Text: "📄", CallbackData: fmt.Sprintf("editTrainerInfo_%d", trainer.ID)},
+			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTrainer_%d", trainer.ID)},
+		})
 	}
+
+	// Добавляем кнопку "Назад к админке"
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "🔙 Назад к админке", CallbackData: "admin"},
+	})
+
+	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
-func CreateTracksMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "➕ Добавить трассу", CallbackData: "createTrack"},
-				{Text: "🏁 Список трасс", CallbackData: "viewTracks"},
-			},
-			{
-				{Text: "✏️ Редактировать", CallbackData: "editTrack"},
-				{Text: "🗑️ Удалить", CallbackData: "deleteTrack"},
-			},
-			{
-				{Text: "🔙 Назад к админке", CallbackData: "admin"},
-			},
-		},
+func CreateTracksListWithActionsKeyboard(tracks []database.Track) inlineKeyboardMarkup {
+	var buttons [][]inlineKeyboardButton
+
+	// Добавляем кнопку "Добавить трассу" в начале
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "➕ Добавить трассу", CallbackData: "createTrack"},
+	})
+
+	// Добавляем кнопки для каждой трассы
+	for _, track := range tracks {
+		buttons = append(buttons, []inlineKeyboardButton{
+			{Text: fmt.Sprintf("✏️ %s", track.Name), CallbackData: fmt.Sprintf("editTrackName_%d", track.ID)},
+			{Text: "📄", CallbackData: fmt.Sprintf("editTrackInfo_%d", track.ID)},
+			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTrack_%d", track.ID)},
+		})
 	}
+
+	// Добавляем кнопку "Назад к админке"
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "🔙 Назад к админке", CallbackData: "admin"},
+	})
+
+	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
-func CreateScheduleMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "➕ Добавить в расписание", CallbackData: "createSchedule"},
-			},
-			{
-				{Text: "📅 Просмотр расписания", CallbackData: "viewSchedule"},
-			},
-			{
-				{Text: "✏️ Редактировать", CallbackData: "editSchedule"},
-			},
-			{
-				{Text: "🔙 Назад к админке", CallbackData: "admin"},
-			},
-		},
+func CreateTrainingsListWithActionsKeyboard(trainings []database.Training) inlineKeyboardMarkup {
+	var buttons [][]inlineKeyboardButton
+
+	// Добавляем кнопку "Добавить тренировку" в начале
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "➕ Добавить тренировку", CallbackData: "createSchedule"},
+	})
+
+	// Добавляем кнопки для каждой тренировки
+	for _, training := range trainings {
+		statusIcon := "🟢"
+		if !training.IsActive {
+			statusIcon = "🔴"
+		}
+		buttons = append(buttons, []inlineKeyboardButton{
+			{Text: fmt.Sprintf("%s %s", statusIcon, training.StartTime.Format("02.01 15:04")), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
+			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTraining_%d", training.ID)},
+		})
 	}
+
+	// Добавляем кнопку "Назад к админке"
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "🔙 Назад к админке", CallbackData: "admin"},
+	})
+
+	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
 func CreateInfoKeyboard() inlineKeyboardMarkup {
@@ -233,32 +239,6 @@ func CreateConfirmationKeyboard() inlineKeyboardMarkup {
 	}
 }
 
-func CreateTrainerSelectionKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(trainers); i += 5 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+5 && j < len(trainers); j++ {
-			trainer := trainers[j]
-			buttonText := fmt.Sprintf("%d. %s", j+1, trainer.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrainer_%d", trainer.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🔙 Назад к тренерам", CallbackData: "trainersMenu"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
-}
-
 func CreateTrainerEditKeyboard(trainerId uint) inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -276,32 +256,6 @@ func CreateTrainerEditKeyboard(trainerId uint) inlineKeyboardMarkup {
 	}
 }
 
-func CreateTrainerDeletionKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(trainers); i += 3 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+3 && j < len(trainers); j++ {
-			trainer := trainers[j]
-			buttonText := fmt.Sprintf("🗑️ %s", trainer.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("deleteTrainer_%d", trainer.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🔙 Назад к тренерам", CallbackData: "trainersMenu"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
-}
-
 func CreateDeletionConfirmationKeyboard(trainerId uint) inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -313,30 +267,15 @@ func CreateDeletionConfirmationKeyboard(trainerId uint) inlineKeyboardMarkup {
 	}
 }
 
-func CreateTrackSelectionKeyboard(tracks []database.Track) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(tracks); i += 5 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+5 && j < len(tracks); j++ {
-			track := tracks[j]
-			buttonText := fmt.Sprintf("%d. %s", j+1, track.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrack_%d", track.ID),
-			})
-		}
-		buttons = append(buttons, row)
+func CreateTrainingDeletionConfirmationKeyboard(trainingId uint) inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{
+				{Text: "🗑️ Удалить", CallbackData: fmt.Sprintf("confirmDeleteTraining_%d", trainingId)},
+				{Text: "❌ Отменить", CallbackData: "scheduleMenu"},
+			},
+		},
 	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🔙 Назад к трассам", CallbackData: "tracksMenu"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
 func CreateTrackEditKeyboard(trackId uint) inlineKeyboardMarkup {
@@ -353,32 +292,6 @@ func CreateTrackEditKeyboard(trackId uint) inlineKeyboardMarkup {
 	}
 }
 
-func CreateTrackDeletionKeyboard(tracks []database.Track) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(tracks); i += 3 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+3 && j < len(tracks); j++ {
-			track := tracks[j]
-			buttonText := fmt.Sprintf("%d. %s", j+1, track.Name)
-			if len(buttonText) > 15 {
-				buttonText = buttonText[:12] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("deleteTrack_%d", track.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🔙 Назад к трассам", CallbackData: "tracksMenu"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
-}
-
 func CreateTrackDeletionConfirmationKeyboard(trackId uint) inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
@@ -388,29 +301,6 @@ func CreateTrackDeletionConfirmationKeyboard(trackId uint) inlineKeyboardMarkup 
 			},
 		},
 	}
-}
-
-func CreateTrainingSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(trainings); i += 2 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+2 && j < len(trainings); j++ {
-			training := trainings[j]
-			buttonText := fmt.Sprintf("🏃‍♂️ %d", j+1)
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTraining_%d", training.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🏠 Главное меню", CallbackData: "start"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
 }
 
 func CreateTrainingRegistrationConfirmationKeyboard(trainingId uint) inlineKeyboardMarkup {
@@ -438,20 +328,11 @@ func CreateTrainingApprovalKeyboard(registrationId uint) inlineKeyboardMarkup {
 func CreateTrainerSelectionForTrainingKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	for i := 0; i < len(trainers); i += 3 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+3 && j < len(trainers); j++ {
-			trainer := trainers[j]
-			buttonText := fmt.Sprintf("%d. %s", j+1, trainer.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrainerForTraining_%d", trainer.ID),
-			})
-		}
-		buttons = append(buttons, row)
+	for _, t := range trainers {
+		buttons = append(buttons, []inlineKeyboardButton{{
+			Text:         t.Name,
+			CallbackData: fmt.Sprintf("selectTrainerForTraining_%d", t.ID),
+		}})
 	}
 
 	buttons = append(buttons, []inlineKeyboardButton{
@@ -465,48 +346,16 @@ func CreateTrainerSelectionForTrainingKeyboard(trainers []database.Trainer) inli
 func CreateTrackSelectionForTrainingKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	for i := 0; i < len(tracks); i += 3 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+3 && j < len(tracks); j++ {
-			track := tracks[j]
-			buttonText := fmt.Sprintf("%d. %s", j+1, track.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrackForTraining_%d", track.ID),
-			})
-		}
-		buttons = append(buttons, row)
+	for _, t := range tracks {
+		buttons = append(buttons, []inlineKeyboardButton{{
+			Text:         t.Name,
+			CallbackData: fmt.Sprintf("selectTrackForTraining_%d", t.ID),
+		}})
 	}
 
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к расписанию", CallbackData: "scheduleMenu"},
 		{Text: "❌ Отменить", CallbackData: "cancel"},
-	})
-
-	return inlineKeyboardMarkup{InlineKeyboard: buttons}
-}
-
-func CreateTrainingEditSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
-	var buttons [][]inlineKeyboardButton
-
-	for i := 0; i < len(trainings); i += 2 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+2 && j < len(trainings); j++ {
-			training := trainings[j]
-			buttonText := fmt.Sprintf("🏃‍♂️ %d", j+1)
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("editTraining_%d", training.ID),
-			})
-		}
-		buttons = append(buttons, row)
-	}
-
-	buttons = append(buttons, []inlineKeyboardButton{
-		{Text: "🔙 Назад к расписанию", CallbackData: "scheduleMenu"},
 	})
 
 	return inlineKeyboardMarkup{InlineKeyboard: buttons}
@@ -535,20 +384,11 @@ func CreateTrainingEditKeyboard(trainingId uint) inlineKeyboardMarkup {
 func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	for i := 0; i < len(tracks); i += 2 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+2 && j < len(tracks); j++ {
-			track := tracks[j]
-			buttonText := fmt.Sprintf("🏁 %s", track.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrackForRegistration_%d", track.ID),
-			})
-		}
-		buttons = append(buttons, row)
+	for _, t := range tracks {
+		buttons = append(buttons, []inlineKeyboardButton{{
+			Text:         t.Name,
+			CallbackData: fmt.Sprintf("selectTrackForRegistration_%d", t.ID),
+		}})
 	}
 
 	buttons = append(buttons, []inlineKeyboardButton{
@@ -561,20 +401,11 @@ func CreateTrackSelectionForRegistrationKeyboard(tracks []database.Track) inline
 func CreateTrainerSelectionForRegistrationKeyboard(trainers []database.Trainer) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	for i := 0; i < len(trainers); i += 2 {
-		var row []inlineKeyboardButton
-		for j := i; j < i+2 && j < len(trainers); j++ {
-			trainer := trainers[j]
-			buttonText := fmt.Sprintf("👨‍🏫 %s", trainer.Name)
-			if len(buttonText) > 20 {
-				buttonText = buttonText[:17] + "..."
-			}
-			row = append(row, inlineKeyboardButton{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrainerForRegistration_%d", trainer.ID),
-			})
-		}
-		buttons = append(buttons, row)
+	for _, t := range trainers {
+		buttons = append(buttons, []inlineKeyboardButton{{
+			Text:         t.Name,
+			CallbackData: fmt.Sprintf("selectTrainerForRegistration_%d", t.ID),
+		}})
 	}
 
 	buttons = append(buttons, []inlineKeyboardButton{
@@ -587,15 +418,11 @@ func CreateTrainerSelectionForRegistrationKeyboard(trainers []database.Trainer) 
 func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKeyboardMarkup {
 	var buttons [][]inlineKeyboardButton
 
-	for _, training := range trainings {
-		buttonText := fmt.Sprintf("📅 %s", training.StartTime.Format("02.01 15:04"))
-		row := []inlineKeyboardButton{
-			{
-				Text:         buttonText,
-				CallbackData: fmt.Sprintf("selectTrainingTimeForRegistration_%d", training.ID),
-			},
-		}
-		buttons = append(buttons, row)
+	for _, t := range trainings {
+		buttons = append(buttons, []inlineKeyboardButton{{
+			Text:         t.StartTime.Format("02.01 15:04"),
+			CallbackData: fmt.Sprintf("selectTrainingTimeForRegistration_%d", t.ID),
+		}})
 	}
 
 	buttons = append(buttons, []inlineKeyboardButton{

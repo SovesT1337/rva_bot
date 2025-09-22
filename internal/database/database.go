@@ -63,7 +63,3 @@ func InitDB(filepath string) error {
 
 	return nil
 }
-
-func GetDBWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), timeout)
-}

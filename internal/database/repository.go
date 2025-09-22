@@ -4,9 +4,6 @@ type ContentRepositoryInterface interface {
 	CreateTrainer(content *Trainer) (uint, error)
 	GetTrainerByID(ID uint) (*Trainer, error)
 	GetTrainers() ([]Trainer, error)
-	UpdateTrainerTgId(id uint, tgid string) (uint, error)
-	UpdateTrainerName(id uint, name string) (uint, error)
-	UpdateTrainerInfo(id uint, info string) (uint, error)
 	UpdateTrainer(id uint, trainer *Trainer) error
 	DeleteTrainer(id uint) error
 
@@ -21,8 +18,6 @@ type ContentRepositoryInterface interface {
 	GetTrackByID(id uint) (*Track, error)
 	GetTracks() ([]Track, error)
 	UpdateTrack(id uint, track *Track) error
-	UpdateTrackName(id uint, name string) (uint, error)
-	UpdateTrackInfo(id uint, info string) (uint, error)
 	DeleteTrack(id uint) error
 
 	CreateUser(user *User) (uint, error)
