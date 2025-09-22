@@ -8,7 +8,7 @@ type Trainer struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
 	TgId      string
-	ChatId    int `gorm:"uniqueIndex"` 		
+	ChatId    int `gorm:"uniqueIndex"`
 	Info      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -18,8 +18,8 @@ type Admin struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
 	TgId      string
-	ChatId    int  `gorm:"uniqueIndex"` 
-	IsActive  bool 
+	ChatId    int `gorm:"uniqueIndex"`
+	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -27,8 +27,8 @@ type Admin struct {
 type User struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
-	ChatId    int  `gorm:"uniqueIndex"` 
-	IsActive  bool 
+	ChatId    int `gorm:"uniqueIndex"`
+	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -45,9 +45,10 @@ type Training struct {
 	ID              uint `gorm:"primaryKey"`
 	TrainerID       uint
 	TrackID         uint
-	Time            time.Time
-	MaxParticipants int 
-	IsActive        bool 
+	StartTime       time.Time
+	EndTime         time.Time
+	MaxParticipants int
+	IsActive        bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -56,7 +57,7 @@ type TrainingRegistration struct {
 	ID         uint `gorm:"primaryKey"`
 	TrainingID uint
 	UserID     uint
-	Status     string 
+	Status     string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

@@ -15,6 +15,74 @@ func sendErrorMessage(botUrl string, chatId int, messageId int) states.State {
 	return states.SetStartKeyboard()
 }
 
+func SendHelpMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "👋 <b>RVA Academy Bot</b>\n\n"+
+		"📋 Команды:\n"+
+		"/start - главное меню\n"+
+		"/help - справка\n"+
+		"/admin - админ-панель", telegram.CreateNavigationKeyboard())
+	return states.SetStartKeyboard()
+}
+
+func SendAccessDeniedMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Доступ запрещен</b>\n"+
+		"Нет прав администратора.", telegram.CreateBaseKeyboard())
+	return states.SetStartKeyboard()
+}
+
+func SendAdminPanelMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "⚙️ <b>Админ-панель</b>\n"+
+		"", telegram.CreateAdminKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendTrainersMenuMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "👨‍🏫 Управление тренерами\n\n"+
+		"", telegram.CreateTrainersMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendTracksMenuMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🏁 <b>Управление трассами</b>\n\n"+
+		"🎯 <b>Доступные действия:</b>\n"+
+		"➕ Добавление новых трасс\n"+
+		"🏁 Просмотр списка трасс\n"+
+		"✏️ Редактирование трасс\n"+
+		"🗑️ Удаление трасс\n\n"+
+		"", telegram.CreateTracksMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendScheduleMenuMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "📅 Управление расписанием\n\n"+
+		"", telegram.CreateScheduleMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendOperationCancelledMessage(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🚫 <b>Операция отменена</b>\n\n"+
+		"💡 Вы можете повторить операцию позже.", telegram.CreateBaseKeyboard())
+	return states.SetStartKeyboard()
+}
+
+func SendOperationCancelledWithTrainersMenu(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🚫 <b>Операция отменена</b>\n\n"+
+		"💡 Вы можете повторить операцию позже.", telegram.CreateBackToTrainersMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendOperationCancelledWithTracksMenu(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🚫 <b>Операция отменена</b>\n\n"+
+		"💡 Вы можете повторить операцию позже.", telegram.CreateBackToTracksMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+func SendOperationCancelledWithScheduleMenu(botUrl string, chatId int, messageId int) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🚫 <b>Операция отменена</b>\n\n"+
+		"💡 Вы можете повторить операцию позже.", telegram.CreateBackToScheduleMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
 func Help(botUrl string, ChatId int) states.State {
 	telegram.SendMessage(botUrl, ChatId, "🎓 <b>Добро пожаловать в RVA Academy Bot!</b>\n\n"+
 		"🤖 Я помогу вам управлять тренировками и тренерами.\n\n"+
@@ -26,9 +94,15 @@ func Help(botUrl string, ChatId int) states.State {
 	return states.SetStartKeyboard()
 }
 
-func Start(botUrl string, chatId int) states.State {
-	telegram.SendMessage(botUrl, chatId, "🎯 <b>RVA Academy Bot</b>\n\n"+
-		"🏃‍♂️ Добро пожаловать в систему регистрации на тренировки!\n\n", telegram.CreateStartKeyboard())
+func Start(botUrl string, chatId int, repo database.ContentRepositoryInterface) states.State {
+	// Проверяем, является ли пользователь администратором
+	if IsAdmin(chatId, repo) {
+		telegram.SendMessage(botUrl, chatId, "🎯 <b>RVA Academy Bot</b>\n\n"+
+			"🏃‍♂️ Добро пожаловать в систему регистрации на тренировки!\n\n", telegram.CreateStartKeyboardForAdmin())
+	} else {
+		telegram.SendMessage(botUrl, chatId, "🎯 <b>RVA Academy Bot</b>\n\n"+
+			"🏃‍♂️ Добро пожаловать в систему регистрации на тренировки!\n\n", telegram.CreateStartKeyboard())
+	}
 	return states.SetStartKeyboard()
 }
 
@@ -74,20 +148,28 @@ func InfoFormat(botUrl string, chatId int, messageId int) states.State {
 }
 
 func ViewScheduleUser(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface) states.State {
-	trainings, err := repo.GetActiveTrainings()
+	user, err := repo.GetUserByChatId(chatId)
+	if err != nil || user == nil {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Пользователь не найден</b>\n\n"+
+			"🔍 Сначала зарегистрируйтесь в системе.", telegram.CreateBaseKeyboard())
+		return states.SetStartKeyboard()
+	}
+
+	trainings, err := repo.GetUserTrainings(user.ID)
 	if err != nil {
-		log.Printf("ERROR: Failed to get active trainings: %v", err)
+		log.Printf("ERROR: Failed to get user trainings: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId)
 	}
 
 	if len(trainings) == 0 {
-		telegram.EditMessage(botUrl, chatId, messageId, "📅 <b>Расписание тренировок</b>\n\n"+
-			"📝 <b>Активных тренировок пока нет</b>\n\n"+
-			"💡 Следите за обновлениями! Новые тренировки появятся в ближайшее время.", telegram.CreateBackToInfoKeyboard())
+		telegram.EditMessage(botUrl, chatId, messageId, "📅 <b>Ваше расписание тренировок</b>\n\n"+
+			"📝 <b>У вас пока нет записей на тренировки</b>\n\n"+
+			"💡 Запишитесь на тренировку через главное меню!", telegram.CreateBackToInfoKeyboard())
 		return states.SetStartKeyboard()
 	}
 
-	message := formatTrainingsListForUsers(trainings, repo)
+	message := "📅 <b>Ваше расписание тренировок</b>\n\n"
+	message += formatTrainingsListForUsers(trainings, repo)
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateBackToInfoKeyboard())
 	return states.SetStartKeyboard()
 }
@@ -216,7 +298,7 @@ func ConfirmTrainingRegistration(botUrl string, chatId int, messageId int, train
 		"📅 <b>Дата и время:</b> %s\n"+
 		"👥 <b>Свободных мест:</b> %d\n\n"+
 		"❓ <b>Подтвердить запись на тренировку?</b>",
-		trackName, trainerName, training.Time.Format("02.01.2006 15:04"), training.MaxParticipants-registeredCount)
+		trackName, trainerName, training.StartTime.Format("02.01.2006 15:04"), training.MaxParticipants-registeredCount)
 
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainingRegistrationConfirmationKeyboard(trainingId))
 	return states.SetConfirmTrainingRegistration(trainingId)
@@ -256,7 +338,7 @@ func ExecuteTrainingRegistration(botUrl string, chatId int, messageId int, train
 			"👤 %s\n"+
 			"🏃‍♂️ %s\n"+
 			"📅 %s",
-			user.Name, trackName, training.Time.Format("02.01.2006 15:04"))
+			user.Name, trackName, training.StartTime.Format("02.01.2006 15:04"))
 
 		telegram.SendMessage(botUrl, trainer.ChatId, notificationMessage, telegram.CreateTrainingApprovalKeyboard(regId))
 	}
@@ -392,7 +474,7 @@ func SelectTrainerForRegistration(botUrl string, chatId int, messageId int, trai
 
 	for i := 0; i < len(trainings)-1; i++ {
 		for j := 0; j < len(trainings)-i-1; j++ {
-			if trainings[j].Time.After(trainings[j+1].Time) {
+			if trainings[j].StartTime.After(trainings[j+1].StartTime) {
 				trainings[j], trainings[j+1] = trainings[j+1], trainings[j]
 			}
 		}
@@ -462,7 +544,7 @@ func ApproveTrainingRegistration(botUrl string, chatId int, messageId int, regis
 			"🏃‍♂️ <b>Тренировка:</b> %s\n"+
 			"📅 <b>Дата и время:</b> %s\n\n"+
 			"💡 <b>До встречи на тренировке!</b>",
-			trackName, training.Time.Format("02.01.2006 15:04"))
+			trackName, training.StartTime.Format("02.01.2006 15:04"))
 
 		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
 	}
@@ -510,7 +592,7 @@ func RejectTrainingRegistration(botUrl string, chatId int, messageId int, regist
 			"🏃‍♂️ <b>Тренировка:</b> %s\n"+
 			"📅 <b>Дата и время:</b> %s\n\n"+
 			"💡 <b>Попробуйте записаться на другую тренировку.</b>",
-			trackName, training.Time.Format("02.01.2006 15:04"))
+			trackName, training.StartTime.Format("02.01.2006 15:04"))
 
 		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
 	}
@@ -565,7 +647,7 @@ func formatTrainingsListForUsers(trainings []database.Training, repo database.Co
 		builder.WriteString(fmt.Sprintf("🏃‍♂️ <b>%d. Тренировка</b>\n", i+1))
 		builder.WriteString(fmt.Sprintf("👨‍🏫 <b>Тренер:</b> %s\n", trainerName))
 		builder.WriteString(fmt.Sprintf("🏁 <b>Трасса:</b> %s\n", trackName))
-		builder.WriteString(fmt.Sprintf("📅 <b>Дата и время:</b> %s\n", training.Time.Format("02.01.2006 15:04")))
+		builder.WriteString(fmt.Sprintf("📅 <b>Дата и время:</b> %s\n", training.StartTime.Format("02.01.2006 15:04")))
 		builder.WriteString(fmt.Sprintf("👥 <b>Свободно:</b> %s\n", spotsText))
 
 		if len(confirmedUsers) > 0 {

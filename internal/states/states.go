@@ -8,10 +8,10 @@ const (
 	StateStartKeyboard = "StateStartKeyboard"
 	StateAdminKeyboard = "StateAdminKeyboard"
 
-	StateEnterTrainerName       = "StateEnterTrainerName"
-	StateEnterTrainerTgId       = "StateEnterTrainerTgId"
-	StateEnterTrainerChatId     = "StateEnterTrainerChatId"
-	StateEnterTrainerInfo       = "StateEnterTrainerInfo"
+	StateSetTrainerName         = "StateEnterTrainerName"
+	StateSetTrainerTgId         = "StateSetTrainerTgId"
+	StateSetTrainerChatId       = "StateSetTrainerChatId"
+	StateSetTrainerInfo         = "StateSetTrainerInfo"
 	StateConfirmTrainerCreation = "StateConfirmTrainerCreation"
 
 	StateSelectTrainerToEdit  = "StateSelectTrainerToEdit"
@@ -21,8 +21,8 @@ const (
 	StateConfirmTrainerEdit   = "StateConfirmTrainerEdit"
 	StateConfirmTrainerDelete = "StateConfirmTrainerDelete"
 
-	StateEnterTrackName       = "StateEnterTrackName"
-	StateEnterTrackInfo       = "StateEnterTrackInfo"
+	StateSetTrackName         = "StateSetTrackName"
+	StateSetTrackInfo         = "StateSetTrackInfo"
 	StateConfirmTrackCreation = "StateConfirmTrackCreation"
 
 	StateSelectTrackToEdit  = "StateSelectTrackToEdit"
@@ -31,14 +31,15 @@ const (
 	StateConfirmTrackEdit   = "StateConfirmTrackEdit"
 	StateConfirmTrackDelete = "StateConfirmTrackDelete"
 
-	StateEnterUserName           = "StateEnterUserName"
+	StateSetUserName             = "StateSetUserName"
 	StateConfirmUserRegistration = "StateConfirmUserRegistration"
 
-	StateEnterTrainingTrainer         = "StateEnterTrainingTrainer"
-	StateEnterTrainingTrack           = "StateEnterTrainingTrack"
-	StateEnterTrainingDate            = "StateEnterTrainingDate"
-	StateEnterTrainingMaxParticipants = "StateEnterTrainingMaxParticipants"
-	StateConfirmTrainingCreation      = "StateConfirmTrainingCreation"
+	StateSetTrainingTrack           = "StateSetTrainingTrack"
+	StateSetTrainingTrainer         = "StateSetTrainingTrainer"
+	StateSetTrainingStartTime       = "StateSetTrainingStartTime"
+	StateSetTrainingEndTime         = "StateSetTrainingEndTime"
+	StateSetTrainingMaxParticipants = "StateSetTrainingMaxParticipants"
+	StateConfirmTrainingCreation    = "StateConfirmTrainingCreation"
 
 	StateSelectTrainingToRegister    = "StateSelectTrainingToRegister"
 	StateConfirmTrainingRegistration = "StateConfirmTrainingRegistration"
@@ -72,7 +73,8 @@ type TempUserData struct {
 type TempTrainingData struct {
 	TrainerID       uint
 	TrackID         uint
-	Date            string
+	StartTime       string
+	EndTime         string
 	MaxParticipants int
 }
 
@@ -189,19 +191,19 @@ func SetAdminKeyboard() State {
 }
 
 func SetEnterTrainerName(id uint) State {
-	return NewState(StateEnterTrainerName, map[string]interface{}{"id": id})
+	return NewState(StateSetTrainerName, map[string]interface{}{"id": id})
 }
 
 func SetEnterTrainerTgId(id uint) State {
-	return NewState(StateEnterTrainerTgId, map[string]interface{}{"id": id})
+	return NewState(StateSetTrainerTgId, map[string]interface{}{"id": id})
 }
 
 func SetEnterTrainerChatId(id uint) State {
-	return NewState(StateEnterTrainerChatId, map[string]interface{}{"id": id})
+	return NewState(StateSetTrainerChatId, map[string]interface{}{"id": id})
 }
 
 func SetEnterTrainerInfo(id uint) State {
-	return NewState(StateEnterTrainerInfo, map[string]interface{}{"id": id})
+	return NewState(StateSetTrainerInfo, map[string]interface{}{"id": id})
 }
 
 func SetConfirmTrainerCreation() State {
@@ -233,11 +235,11 @@ func SetConfirmTrainerDelete(id uint) State {
 }
 
 func SetEnterTrackName(id uint) State {
-	return NewState(StateEnterTrackName, map[string]interface{}{"id": id})
+	return NewState(StateSetTrackName, map[string]interface{}{"id": id})
 }
 
 func SetEnterTrackInfo(id uint) State {
-	return NewState(StateEnterTrackInfo, map[string]interface{}{"id": id})
+	return NewState(StateSetTrackInfo, map[string]interface{}{"id": id})
 }
 
 func SetConfirmTrackCreation() State {
@@ -265,27 +267,31 @@ func SetConfirmTrackDelete(id uint) State {
 }
 
 func SetEnterUserName() State {
-	return NewState(StateEnterUserName, nil)
+	return NewState(StateSetUserName, nil)
 }
 
 func SetConfirmUserRegistration() State {
 	return NewState(StateConfirmUserRegistration, nil)
 }
 
-func SetEnterTrainingTrainer(id uint) State {
-	return NewState(StateEnterTrainingTrainer, map[string]interface{}{"id": id})
+func SetSetTrainingTrainer(id uint) State {
+	return NewState(StateSetTrainingTrainer, map[string]interface{}{"id": id})
 }
 
-func SetEnterTrainingTrack(id uint) State {
-	return NewState(StateEnterTrainingTrack, map[string]interface{}{"id": id})
+func SetSetTrainingTrack(id uint) State {
+	return NewState(StateSetTrainingTrack, map[string]interface{}{"id": id})
 }
 
-func SetEnterTrainingDate(id uint) State {
-	return NewState(StateEnterTrainingDate, map[string]interface{}{"id": id})
+func SetSetTrainingStartTime(id uint) State {
+	return NewState(StateSetTrainingStartTime, map[string]interface{}{"id": id})
 }
 
-func SetEnterTrainingMaxParticipants(id uint) State {
-	return NewState(StateEnterTrainingMaxParticipants, map[string]interface{}{"id": id})
+func SetSetTrainingEndTime(id uint) State {
+	return NewState(StateSetTrainingEndTime, map[string]interface{}{"id": id})
+}
+
+func SetSetTrainingMaxParticipants(id uint) State {
+	return NewState(StateSetTrainingMaxParticipants, map[string]interface{}{"id": id})
 }
 
 func SetConfirmTrainingCreation() State {

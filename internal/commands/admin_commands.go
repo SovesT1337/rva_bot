@@ -558,27 +558,6 @@ func EditSchedule(botUrl string, chatId int, messageId int, repo database.Conten
 }
 
 func CreateTraining(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface) states.State {
-	trainers, err := repo.GetTrainers()
-	if err != nil {
-		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка загрузки тренеров</b>\n\n"+
-			"Попробуйте позже.", telegram.CreateBackToScheduleMenuKeyboard())
-		return states.SetAdminKeyboard()
-	}
-
-	if len(trainers) == 0 {
-		telegram.EditMessage(botUrl, chatId, messageId, "📭 <b>Тренеры не найдены</b>\n\n"+
-			"Сначала создайте тренеров.", telegram.CreateBackToScheduleMenuKeyboard())
-		return states.SetAdminKeyboard()
-	}
-
-	message := "👨‍🏫 <b>Выберите тренера для тренировки:</b>\n\n"
-	message += formatTrainersListForAdmin(trainers)
-
-	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainerSelectionKeyboard(trainers))
-	return states.SetEnterTrainingTrainer(0)
-}
-
-func SetTrainingTrainer(botUrl string, chatId int, messageId int, trainerId uint, repo database.ContentRepositoryInterface, state states.State) states.State {
 	tracks, err := repo.GetTracks()
 	if err != nil {
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка загрузки трасс</b>\n\n"+
@@ -595,23 +574,75 @@ func SetTrainingTrainer(botUrl string, chatId int, messageId int, trainerId uint
 	message := "🏁 <b>Выберите трассу для тренировки:</b>\n\n"
 	message += formatTracksListForAdmin(tracks)
 
-	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrackSelectionKeyboard(tracks))
-	return states.SetEnterTrainingTrack(trainerId)
+	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrackSelectionForTrainingKeyboard(tracks))
+	return states.SetSetTrainingTrack(0)
+}
+
+func SetTrainingTrainer(botUrl string, chatId int, messageId int, trainerId uint, repo database.ContentRepositoryInterface, state states.State) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🕐 Введите время начала тренировки:\n\n"+
+		"💡 <i>Пример: 2024-01-15 18:00</i>", telegram.CreateBackToScheduleMenuKeyboard())
+
+	// Сохраняем данные в состоянии
+	newState := states.SetSetTrainingStartTime(0)
+	newState.Data["trackId"] = state.Data["trackId"]
+	newState.Data["trainerId"] = trainerId
+	return newState
 }
 
 func SetTrainingTrack(botUrl string, chatId int, messageId int, trackId uint, repo database.ContentRepositoryInterface, state states.State) states.State {
-	telegram.EditMessage(botUrl, chatId, messageId, "📅 Введите дату и время тренировки:\n\n"+
-		"💡 <i>Пример: 2024-01-15 18:00</i>", telegram.CreateBackToScheduleMenuKeyboard())
-	return states.SetEnterTrainingDate(0)
+	trainers, err := repo.GetTrainers()
+	if err != nil {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка загрузки тренеров</b>\n\n"+
+			"Попробуйте позже.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	if len(trainers) == 0 {
+		telegram.EditMessage(botUrl, chatId, messageId, "📭 <b>Тренеры не найдены</b>\n\n"+
+			"Сначала создайте тренеров.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	message := "👨‍🏫 <b>Выберите тренера для тренировки:</b>\n\n"
+	message += formatTrainersListForAdmin(trainers)
+
+	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainerSelectionForTrainingKeyboard(trainers))
+
+	// Сохраняем trackId в состоянии
+	newState := states.SetSetTrainingTrainer(0)
+	newState.Data["trackId"] = trackId
+	return newState
 }
 
-func SetTrainingDate(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
-	date := update.Message.Text
-	log.Printf("User %d setting training date: %s", chatId, date)
+func SetTrainingStartTime(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
+	startTime := update.Message.Text
+	log.Printf("User %d setting training start time: %s", chatId, startTime)
+
+	telegram.SendMessage(botUrl, chatId, "🕕 Введите время окончания тренировки:\n\n"+
+		"💡 <i>Пример: 2024-01-15 20:00</i>", telegram.CreateBackToScheduleMenuKeyboard())
+
+	// Сохраняем данные в состоянии
+	newState := states.SetSetTrainingEndTime(0)
+	newState.Data["trackId"] = state.Data["trackId"]
+	newState.Data["trainerId"] = state.Data["trainerId"]
+	newState.Data["startTime"] = startTime
+	return newState
+}
+
+func SetTrainingEndTime(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
+	endTime := update.Message.Text
+	log.Printf("User %d setting training end time: %s", chatId, endTime)
 
 	telegram.SendMessage(botUrl, chatId, "👥 Введите максимальное количество участников:\n\n"+
 		"💡 <i>Пример: 10</i>", telegram.CreateBackToScheduleMenuKeyboard())
-	return states.SetEnterTrainingMaxParticipants(0)
+
+	// Сохраняем данные в состоянии
+	newState := states.SetSetTrainingMaxParticipants(0)
+	newState.Data["trackId"] = state.Data["trackId"]
+	newState.Data["trainerId"] = state.Data["trainerId"]
+	newState.Data["startTime"] = state.Data["startTime"]
+	newState.Data["endTime"] = endTime
+	return newState
 }
 
 func SetTrainingMaxParticipants(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
@@ -620,35 +651,97 @@ func SetTrainingMaxParticipants(botUrl string, chatId int, update telegram.Updat
 	if err != nil {
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Неверный формат числа</b>\n\n"+
 			"Введите число участников:", telegram.CreateBackToScheduleMenuKeyboard())
-		return states.SetEnterTrainingMaxParticipants(0)
+		return states.SetSetTrainingMaxParticipants(0)
 	}
 
-	date := state.Data["date"].(string)
-	trainerId := state.Data["trainerId"].(uint)
+	// Получаем данные из состояния
 	trackId := state.Data["trackId"].(uint)
+	trainerId := state.Data["trainerId"].(uint)
+	startTime := state.Data["startTime"].(string)
+	endTime := state.Data["endTime"].(string)
+
+	// Создаем временные данные для тренировки
+	tempData := &states.TempTrainingData{
+		TrackID:         trackId,
+		TrainerID:       trainerId,
+		StartTime:       startTime,
+		EndTime:         endTime,
+		MaxParticipants: maxParticipants,
+	}
+
+	// Получаем информацию о тренере и трассе для отображения
+	trainer, _ := repo.GetTrainerByID(trainerId)
+	track, _ := repo.GetTrackByID(trackId)
+
+	trainerName := "Неизвестный тренер"
+	if trainer != nil {
+		trainerName = trainer.Name
+	}
+
+	trackName := "Неизвестная трасса"
+	if track != nil {
+		trackName = track.Name
+	}
 
 	message := fmt.Sprintf("📅 <b>Подтверждение создания тренировки</b>\n\n"+
-		"👨‍🏫 <b>Тренер:</b> ID %d\n"+
-		"🏁 <b>Трасса:</b> ID %d\n"+
-		"📅 <b>Дата:</b> %s\n"+
+		"👨‍🏫 <b>Тренер:</b> %s\n"+
+		"🏁 <b>Трасса:</b> %s\n"+
+		"🕐 <b>Начало:</b> %s\n"+
+		"🕕 <b>Окончание:</b> %s\n"+
 		"👥 <b>Макс. участников:</b> %d\n\n"+
 		"❓ <b>Создать тренировку?</b>",
-		trainerId, trackId, date, maxParticipants)
+		trainerName, trackName, startTime, endTime, maxParticipants)
 
 	telegram.SendMessage(botUrl, chatId, message, telegram.CreateConfirmationKeyboard())
-	return states.SetConfirmTrainingCreation()
+	return states.SetConfirmTrainingCreation().SetTempTrainingData(tempData)
 }
 
 func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, tempData *states.TempTrainingData) states.State {
+	// Парсим время начала и окончания
+	startTime, err := time.Parse("2006-01-02 15:04", tempData.StartTime)
+	if err != nil {
+		log.Printf("ERROR: Failed to parse start time: %v", err)
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
+			"Неверный формат времени начала.\n"+
+			"Обратитесь к администратору.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	endTime, err := time.Parse("2006-01-02 15:04", tempData.EndTime)
+	if err != nil {
+		log.Printf("ERROR: Failed to parse end time: %v", err)
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
+			"Неверный формат времени окончания.\n"+
+			"Обратитесь к администратору.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	// Проверяем, что время начала не в прошлом
+	if startTime.Before(time.Now()) {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
+			"Время начала тренировки не может быть в прошлом.\n"+
+			"Выберите будущую дату и время.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	// Проверяем, что время окончания после времени начала
+	if endTime.Before(startTime) || endTime.Equal(startTime) {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
+			"Время окончания должно быть после времени начала.\n"+
+			"Проверьте введенные данные.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
 	training := &database.Training{
 		TrainerID:       tempData.TrainerID,
 		TrackID:         tempData.TrackID,
-		Time:            time.Now(),
+		StartTime:       startTime,
+		EndTime:         endTime,
 		MaxParticipants: tempData.MaxParticipants,
 		IsActive:        true,
 	}
 
-	_, err := repo.CreateTraining(training)
+	_, err = repo.CreateTraining(training)
 	if err != nil {
 		log.Printf("ERROR: Failed to create training: %v", err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
@@ -659,7 +752,8 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 
 	log.Printf("Training created: ID %d", training.ID)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Тренировка создана!</b>\n\n"+
-		"📅 Дата: "+training.Time.Format("2006-01-02 15:04"), telegram.CreateBackToScheduleMenuKeyboard())
+		"🕐 Начало: "+training.StartTime.Format("2006-01-02 15:04")+"\n"+
+		"🕕 Окончание: "+training.EndTime.Format("2006-01-02 15:04"), telegram.CreateBackToScheduleMenuKeyboard())
 	return states.SetAdminKeyboard()
 }
 
@@ -789,7 +883,7 @@ func EditTraining(botUrl string, chatId int, messageId int, trainingId uint, rep
 		"👥 <b>Макс. участников:</b> %d\n"+
 		"🔄 <b>Статус:</b> %s\n\n"+
 		"🎯 <b>Доступные действия:</b>",
-		training.Time.Format("2006-01-02 15:04"), training.MaxParticipants,
+		training.StartTime.Format("2006-01-02 15:04"), training.MaxParticipants,
 		map[bool]string{true: "Активна", false: "Неактивна"}[training.IsActive])
 
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainingEditKeyboard(trainingId))
@@ -814,7 +908,7 @@ func ToggleTrainingStatus(botUrl string, chatId int, messageId int, trainingId u
 
 	status := map[bool]string{true: "активна", false: "неактивна"}[training.IsActive]
 	telegram.EditMessage(botUrl, chatId, messageId, fmt.Sprintf("✅ <b>Тренировка %s</b>\n\n"+
-		"📅 Дата: %s", status, training.Time.Format("2006-01-02 15:04")), telegram.CreateBackToScheduleMenuKeyboard())
+		"📅 Дата: %s", status, training.StartTime.Format("2006-01-02 15:04")), telegram.CreateBackToScheduleMenuKeyboard())
 	return states.SetAdminKeyboard()
 }
 
@@ -834,7 +928,7 @@ func DeleteTraining(botUrl string, chatId int, messageId int, trainingId uint, r
 	}
 
 	telegram.EditMessage(botUrl, chatId, messageId, fmt.Sprintf("🗑️ <b>Тренировка удалена</b>\n\n"+
-		"📅 Дата: %s", training.Time.Format("2006-01-02 15:04")), telegram.CreateBackToScheduleMenuKeyboard())
+		"📅 Дата: %s", training.StartTime.Format("2006-01-02 15:04")), telegram.CreateBackToScheduleMenuKeyboard())
 	return states.SetAdminKeyboard()
 }
 
@@ -859,7 +953,7 @@ func formatTrainingsListForAdmin(trainings []database.Training, repo database.Co
 
 	var builder strings.Builder
 	for i, training := range trainings {
-		builder.WriteString(fmt.Sprintf("%d. 📅 <b>%s</b>\n", i+1, training.Time.Format("2006-01-02 15:04")))
+		builder.WriteString(fmt.Sprintf("%d. 📅 <b>%s</b>\n", i+1, training.StartTime.Format("2006-01-02 15:04")))
 		builder.WriteString(fmt.Sprintf("   👥 Участников: %d\n", training.MaxParticipants))
 		builder.WriteString(fmt.Sprintf("   🔄 Статус: %s\n\n", map[bool]string{true: "Активна", false: "Неактивна"}[training.IsActive]))
 	}

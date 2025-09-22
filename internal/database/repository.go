@@ -50,6 +50,7 @@ type ContentRepositoryInterface interface {
 	GetActiveTrainingsByTrackAndTrainer(trackId, trainerId uint) ([]Training, error)
 	GetTrainersByTrack(trackId uint) ([]Trainer, error)
 	GetTracksWithActiveTrainings() ([]Track, error)
+	GetUserTrainings(userId uint) ([]Training, error)
 }
 
 func NewContentRepository() ContentRepositoryInterface {

@@ -51,6 +51,13 @@ func EditMessage(botUrl string, chatID int, messageID int, text string, keyboard
 	}
 
 	log.Println("Responce: ", responce)
+
+	// Если редактирование сообщения не удалось, отправляем новое сообщение
+	if responce.StatusCode >= 400 {
+		log.Printf("EditMessage failed with status %d, sending new message instead", responce.StatusCode)
+		return SendMessage(botUrl, chatID, text, keyboard)
+	}
+
 	return nil
 }
 

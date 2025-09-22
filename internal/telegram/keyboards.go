@@ -105,6 +105,22 @@ func CreateStartKeyboard() inlineKeyboardMarkup {
 			{
 				{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
 			},
+		},
+	}
+}
+
+func CreateStartKeyboardForAdmin() inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{
+				{Text: "🏃‍♂️ Записаться на тренировку", CallbackData: "BookTraining"},
+			},
+			{
+				{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
+			},
+			{
+				{Text: "🛒 Экипировка", URL: "https://dudarevmotorsport.ru/"},
+			},
 			{
 				{Text: "⚙️ Админ-панель", CallbackData: "admin"},
 			},
@@ -572,7 +588,7 @@ func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKe
 	var buttons [][]inlineKeyboardButton
 
 	for _, training := range trainings {
-		buttonText := fmt.Sprintf("📅 %s", training.Time.Format("02.01 15:04"))
+		buttonText := fmt.Sprintf("📅 %s", training.StartTime.Format("02.01 15:04"))
 		row := []inlineKeyboardButton{
 			{
 				Text:         buttonText,

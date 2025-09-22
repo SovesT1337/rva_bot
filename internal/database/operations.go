@@ -632,7 +632,7 @@ func (r *ContentRepository) GetTrainersByTrack(trackId uint) ([]Trainer, error) 
 		Table("trainers").
 		Select("DISTINCT trainers.*").
 		Joins("INNER JOIN trainings ON trainers.id = trainings.trainer_id").
-		Where("trainings.track_id = ? AND trainings.is_active = ?", trackId, true).
+		Where("trainings.track_id = ? AND trainings.is_active = ? AND trainings.start_time > ?", trackId, true, time.Now()).
 		Find(&trainers)
 
 	if result.Error != nil {
@@ -652,7 +652,7 @@ func (r *ContentRepository) GetTracksWithActiveTrainings() ([]Track, error) {
 		Table("tracks").
 		Select("DISTINCT tracks.*").
 		Joins("INNER JOIN trainings ON tracks.id = trainings.track_id").
-		Where("trainings.is_active = ?", true).
+		Where("trainings.is_active = ? AND trainings.start_time > ?", true, time.Now()).
 		Find(&tracks)
 
 	if result.Error != nil {
@@ -661,4 +661,24 @@ func (r *ContentRepository) GetTracksWithActiveTrainings() ([]Track, error) {
 	}
 
 	return tracks, nil
+}
+
+func (r *ContentRepository) GetUserTrainings(userId uint) ([]Training, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var trainings []Training
+	result := db.WithContext(ctx).
+		Table("trainings").
+		Select("DISTINCT trainings.*").
+		Joins("INNER JOIN training_registrations ON trainings.id = training_registrations.training_id").
+		Where("training_registrations.user_id = ? AND trainings.is_active = ? AND trainings.start_time > ?", userId, true, time.Now()).
+		Find(&trainings)
+
+	if result.Error != nil {
+		log.Printf("ERROR: Failed to get user trainings: %v", result.Error)
+		return nil, result.Error
+	}
+
+	return trainings, nil
 }
