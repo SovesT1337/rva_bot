@@ -5,37 +5,35 @@ import (
 	"encoding/json"
 	"html"
 	"io"
-	"log"
 	"net/http"
+
+	"x.localhost/rvabot/internal/logger"
 )
 
 // logResponse логирует HTTP ответ в понятном формате
 func logResponse(operation string, resp *http.Response) {
 	if resp == nil {
-		log.Printf("%s: получен пустой ответ", operation)
+		logger.TelegramError("Пустой ответ: %s", operation)
 		return
 	}
 
-	statusText := "успешно"
 	if resp.StatusCode >= 400 {
-		statusText = "ошибка"
-	}
+		logger.TelegramError("%s ошибка (код: %d)", operation, resp.StatusCode)
 
-	log.Printf("%s: %s (код: %d)", operation, statusText, resp.StatusCode)
-
-	// Читаем тело ответа для отладки ошибок
-	if resp.StatusCode >= 400 {
+		// Читаем тело ответа для отладки ошибок
 		body, err := io.ReadAll(resp.Body)
 		if err == nil && len(body) > 0 {
-			log.Printf("%s: тело ответа: %s", operation, string(body))
+			logger.TelegramError("Ответ: %s", string(body))
 		}
+	} else {
+		logger.TelegramInfo("%s успешно (код: %d)", operation, resp.StatusCode)
 	}
 }
 
 func LogOut(botUrl string) error {
 	responce, err := http.Post(botUrl+"/logout", "application/json", nil)
 	if err != nil {
-		log.Printf("Выход из бота: ошибка соединения - %s", err)
+		logger.TelegramError("Выход из бота: %s", err)
 		return err
 	}
 
@@ -53,13 +51,13 @@ func SendMessage(botUrl string, chatId int, text string, keyboard inlineKeyboard
 
 	buf, err := json.Marshal(message)
 	if err != nil {
-		log.Printf("Отправка сообщения: ошибка сериализации - %s", err)
+		logger.TelegramError("Сериализация сообщения: %s", err)
 		return err
 	}
 
 	responce, err := http.Post(botUrl+"/sendMessage", "application/json", bytes.NewBuffer(buf))
 	if err != nil {
-		log.Printf("Отправка сообщения: ошибка соединения - %s", err)
+		logger.TelegramError("Отправка сообщения: %s", err)
 		return err
 	}
 
@@ -79,7 +77,7 @@ func EditMessage(botUrl string, chatID int, messageID int, text string, keyboard
 	jsonBody, _ := json.Marshal(body)
 	responce, err := http.Post(botUrl+"/editMessageText", "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
-		log.Printf("Редактирование сообщения: ошибка соединения - %s", err)
+		logger.TelegramError("Редактирование сообщения: %s", err)
 		return err
 	}
 
@@ -87,7 +85,7 @@ func EditMessage(botUrl string, chatID int, messageID int, text string, keyboard
 
 	// Если редактирование сообщения не удалось, отправляем новое сообщение
 	if responce.StatusCode >= 400 {
-		log.Printf("Редактирование сообщения не удалось (код: %d), отправляем новое сообщение", responce.StatusCode)
+		logger.TelegramWarn("Редактирование не удалось (код: %d), отправляем новое", responce.StatusCode)
 		return SendMessage(botUrl, chatID, text, keyboard)
 	}
 
@@ -101,7 +99,7 @@ func AnswerCallbackQuery(botUrl string, callbackID string) error {
 	responce, err := http.Post(botUrl+"/answerCallbackQuery", "application/json", bytes.NewBuffer(jsonBody))
 
 	if err != nil {
-		log.Printf("Ответ на callback: ошибка соединения - %s", err)
+		logger.TelegramError("Ответ на callback: %s", err)
 		return err
 	}
 

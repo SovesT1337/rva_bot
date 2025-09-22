@@ -2,10 +2,10 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"x.localhost/rvabot/internal/database"
+	"x.localhost/rvabot/internal/logger"
 	"x.localhost/rvabot/internal/states"
 	"x.localhost/rvabot/internal/telegram"
 )
@@ -211,7 +211,7 @@ func ViewScheduleUser(botUrl string, chatId int, messageId int, repo database.Co
 
 	trainings, err := repo.GetUserTrainings(user.ID)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренировки пользователя: %v", err)
+		logger.UserError(chatId, "Получение тренировок: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -246,7 +246,7 @@ func SetUserName(botUrl string, chatId int, update telegram.Update, repo databas
 }
 
 func ConfirmUserRegistration(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, tempData *states.TempUserData) states.State {
-	log.Printf("Создание пользователя: %s (ChatId: %d)", tempData.Name, chatId)
+	logger.UserInfo(chatId, "Создание пользователя: %s", tempData.Name)
 
 	user := &database.User{
 		Name:     tempData.Name,
@@ -256,11 +256,11 @@ func ConfirmUserRegistration(botUrl string, chatId int, messageId int, repo data
 
 	id, err := repo.CreateUser(user)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось создать пользователя %s: %v", tempData.Name, err)
+		logger.UserError(chatId, "Создание пользователя %s: %v", tempData.Name, err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
-	log.Printf("Пользователь успешно создан: %s (ID: %d)", tempData.Name, id)
+	logger.UserInfo(chatId, "Пользователь создан: %s (ID: %d)", tempData.Name, id)
 	telegram.EditMessage(botUrl, chatId, messageId, "🎉 <b>Регистрация завершена!</b>\n"+
 		"Добро пожаловать, "+tempData.Name+"!", telegram.CreateStartKeyboard(chatId, repo))
 	return states.SetStartKeyboard()
@@ -277,7 +277,7 @@ func StartTrainingRegistration(botUrl string, chatId int, messageId int, repo da
 
 	tracks, err := repo.GetTracksWithActiveTrainings()
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить треки с активными тренировками: %v", err)
+		logger.UserError(chatId, "Получение треков: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -374,7 +374,7 @@ func ExecuteTrainingRegistration(botUrl string, chatId int, messageId int, train
 
 	regId, err := repo.CreateTrainingRegistration(registration)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось создать регистрацию на тренировку: %v", err)
+		logger.UserError(chatId, "Создание регистрации: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -397,7 +397,7 @@ func ExecuteTrainingRegistration(botUrl string, chatId int, messageId int, train
 		telegram.SendMessage(botUrl, trainer.ChatId, notificationMessage, telegram.CreateTrainingApprovalKeyboard(regId))
 	}
 
-	log.Printf("Регистрация на тренировку успешно создана: ID=%d, UserID=%d, TrainingID=%d", regId, user.ID, trainingId)
+	logger.UserInfo(chatId, "Регистрация создана: ID=%d, TrainingID=%d", regId, trainingId)
 	telegram.EditMessage(botUrl, chatId, messageId, "🎉 <b>Заявка на тренировку отправлена!</b>\n\n"+
 		"✅ <b>Ваша заявка принята и отправлена тренеру на рассмотрение.</b>\n\n"+
 		"📱 <b>Вы получите уведомление о решении тренера.</b>\n"+
@@ -414,7 +414,7 @@ func BackToTrackSelection(botUrl string, chatId int, messageId int, repo databas
 
 	tracks, err := repo.GetTracksWithActiveTrainings()
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить треки с активными тренировками: %v", err)
+		logger.UserError(chatId, "Получение треков: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -449,7 +449,7 @@ func BackToTrainerSelection(botUrl string, chatId int, messageId int, repo datab
 
 	trainers, err := repo.GetTrainersByTrack(tempData.TrackID)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренеров по треку: %v", err)
+		logger.UserError(chatId, "Получение тренеров: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -479,7 +479,7 @@ func SelectTrackForRegistration(botUrl string, chatId int, messageId int, trackI
 
 	trainers, err := repo.GetTrainersByTrack(trackId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренеров по треку: %v", err)
+		logger.UserError(chatId, "Получение тренеров: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -513,7 +513,7 @@ func SelectTrainerForRegistration(botUrl string, chatId int, messageId int, trai
 
 	trainings, err := repo.GetActiveTrainingsByTrackAndTrainer(tempData.TrackID, trainerId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренировки по треку и тренеру: %v", err)
+		logger.UserError(chatId, "Получение тренировок: %v", err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -580,7 +580,7 @@ func ApproveTrainingRegistration(botUrl string, chatId int, messageId int, regis
 	registration.Status = "confirmed"
 	err = repo.UpdateTrainingRegistration(registrationId, registration)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось одобрить регистрацию на тренировку %d: %v", registrationId, err)
+		logger.UserError(chatId, "Одобрение регистрации %d: %v", registrationId, err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -603,7 +603,7 @@ func ApproveTrainingRegistration(botUrl string, chatId int, messageId int, regis
 		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
 	}
 
-	log.Printf("Регистрация на тренировку %d одобрена тренером %d", registrationId, chatId)
+	logger.UserInfo(chatId, "Регистрация %d одобрена", registrationId)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Заявка подтверждена</b>", telegram.CreateBaseKeyboard())
 	return states.SetStartKeyboard()
 }
@@ -629,7 +629,7 @@ func RejectTrainingRegistration(botUrl string, chatId int, messageId int, regist
 	registration.Status = "rejected"
 	err = repo.UpdateTrainingRegistration(registrationId, registration)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось отклонить регистрацию на тренировку %d: %v", registrationId, err)
+		logger.UserError(chatId, "Отклонение регистрации %d: %v", registrationId, err)
 		return sendErrorMessage(botUrl, chatId, messageId, repo)
 	}
 
@@ -651,7 +651,7 @@ func RejectTrainingRegistration(botUrl string, chatId int, messageId int, regist
 		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
 	}
 
-	log.Printf("Регистрация на тренировку %d отклонена тренером %d", registrationId, chatId)
+	logger.UserInfo(chatId, "Регистрация %d отклонена", registrationId)
 	telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Заявка отклонена</b>", telegram.CreateBaseKeyboard())
 	return states.SetStartKeyboard()
 }

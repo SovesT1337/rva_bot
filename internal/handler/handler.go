@@ -8,6 +8,7 @@ import (
 
 	"x.localhost/rvabot/internal/commands"
 	"x.localhost/rvabot/internal/database"
+	"x.localhost/rvabot/internal/logger"
 	"x.localhost/rvabot/internal/states"
 	"x.localhost/rvabot/internal/telegram"
 )
@@ -26,6 +27,7 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 	for {
 		updates, err := telegram.GetUpdates(botUrl, offSet)
 		if err != nil {
+			logger.BotError("Критическая ошибка при получении обновлений: %s", err)
 			log.Panicf("Получение обновлений: критическая ошибка - %s", err)
 			continue
 		}
@@ -33,9 +35,8 @@ func BotLoop(botUrl string, repo database.ContentRepositoryInterface) {
 		for _, update := range updates {
 			select {
 			case updateChan <- update:
-				log.Printf("Обновление %d поставлено в очередь на обработку", update.UpdateId)
 			default:
-				log.Printf("ПРЕДУПРЕЖДЕНИЕ: Очередь обновлений переполнена! Пропускаем обновление %d", update.UpdateId)
+				logger.Warn("HANDLER", "Очередь обновлений переполнена! Пропускаем обновление %d", update.UpdateId)
 			}
 			offSet = update.UpdateId + 1
 		}
@@ -53,12 +54,12 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 			updateType = "callback"
 		}
 
-		log.Printf("Обработка %s обновления %d от чата %d", updateType, update.UpdateId, chatId)
+		logger.Info("HANDLER", "Обработка %s от чата %d", updateType, chatId)
 
 		statesMutex.Lock()
 		if _, ok := userStates[chatId]; !ok {
 			userStates[chatId] = states.SetStart()
-			log.Printf("Новый пользователь %d инициализирован с начальным состоянием", chatId)
+			logger.UserInfo(chatId, "Новый пользователь")
 		}
 		currentState := userStates[chatId]
 		statesMutex.Unlock()
@@ -69,7 +70,7 @@ func processUpdates(botUrl string, repo database.ContentRepositoryInterface,
 		userStates[chatId] = newState
 		statesMutex.Unlock()
 
-		log.Printf("Состояние пользователя %d обновлено: %s", chatId, newState.Type)
+		logger.UserInfo(chatId, "Состояние: %s", newState.Type)
 	}
 }
 
@@ -139,7 +140,7 @@ func respond(botUrl string, update telegram.Update, state states.State, repo dat
 		return handleCallback(botUrl, update.CallbackQuery, repo, state)
 	}
 
-	log.Printf("Состояние не существует: %s", state)
+	logger.Warn("HANDLER", "Состояние не существует: %s", state)
 	return states.SetError()
 }
 
@@ -154,7 +155,7 @@ func handleCallback(botUrl string, query *telegram.CallbackQuery, repo database.
 
 	telegram.AnswerCallbackQuery(botUrl, query.ID)
 
-	log.Printf("Callback от пользователя %d: %s", chatId, data)
+	logger.UserInfo(chatId, "Callback %s", data)
 
 	prefix, id := parseCallbackData(data, chatId)
 	if prefix == "" && id == -1 {
@@ -267,11 +268,11 @@ func parseCallbackData(data string, chatId int) (string, int) {
 
 	parsedId, err := strconv.ParseUint(id_str, 10, 32)
 	if err != nil {
-		log.Printf("Ошибка парсинга ID от пользователя %d: %s", chatId, err)
+		logger.UserError(chatId, "Ошибка парсинга ID: %s", err)
 		return "", -1
 	}
 
-	log.Printf("Префикс от пользователя %d: %s", chatId, prefix)
+	logger.UserInfo(chatId, "Префикс %s", prefix)
 	return prefix, int(parsedId)
 }
 

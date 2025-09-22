@@ -2,12 +2,12 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"x.localhost/rvabot/internal/database"
+	"x.localhost/rvabot/internal/logger"
 	"x.localhost/rvabot/internal/states"
 	"x.localhost/rvabot/internal/telegram"
 )
@@ -112,7 +112,7 @@ func SetTrainerInfo(botUrl string, chatId int, update telegram.Update, repo data
 }
 
 func ConfirmTrainerCreation(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, tempData *states.TempTrainerData) states.State {
-	log.Printf("Создание тренера: %s (TgId: %s, ChatId: %d)", tempData.Name, tempData.TgId, tempData.ChatId)
+	logger.AdminInfo(chatId, "Создание тренера: %s", tempData.Name)
 
 	trainer := &database.Trainer{
 		Name:   tempData.Name,
@@ -123,13 +123,13 @@ func ConfirmTrainerCreation(botUrl string, chatId int, messageId int, repo datab
 
 	_, err := repo.CreateTrainer(trainer)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось создать тренера %s: %v", tempData.Name, err)
+		logger.AdminError(chatId, "Создание тренера %s: %v", tempData.Name, err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка при создании тренера</b>\n"+
 			"Попробуйте позже.", telegram.CreateBackToTrainersMenuKeyboard())
 		return states.SetAdminKeyboard()
 	}
 
-	log.Printf("Тренер успешно создан: %s", tempData.Name)
+	logger.AdminInfo(chatId, "Тренер создан: %s", tempData.Name)
 	telegram.EditMessage(botUrl, chatId, messageId, "🎉 <b>Тренер создан!</b>\n\n"+
 		"👤 <b>Имя:</b> "+tempData.Name+"\n"+
 		"📱 <b>Telegram ID:</b> "+tempData.TgId+"\n"+
@@ -195,12 +195,12 @@ func EditTrainerName(botUrl string, chatId int, messageId int, trainerId uint) s
 
 func SetEditTrainerName(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, trainerId uint) states.State {
 	name := update.Message.Text
-	log.Printf("Пользователь %d обновляет имя тренера %d на: %s", chatId, trainerId, name)
+	logger.AdminInfo(chatId, "Обновление тренера %d: %s", trainerId, name)
 
 	// Получаем существующего тренера
 	trainer, err := repo.GetTrainerByID(trainerId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренера %d: %v", trainerId, err)
+		logger.AdminError(chatId, "Получение тренера %d: %v", trainerId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Тренер не найден</b>\n\n"+
 			"🔍 Возможно, тренер был удален.", telegram.CreateBackToTrainersMenuKeyboard())
 		return states.SetAdminKeyboard()
@@ -210,14 +210,14 @@ func SetEditTrainerName(botUrl string, chatId int, update telegram.Update, repo 
 	trainer.Name = name
 	err = repo.UpdateTrainer(trainerId, trainer)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось обновить имя тренера %d: %v", trainerId, err)
+		logger.AdminError(chatId, "Обновление тренера %d: %v", trainerId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Ошибка обновления имени тренера</b>\n\n"+
 			"Ошибка сохранения.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToTrainersMenuKeyboard())
 		return states.SetAdminKeyboard()
 	}
 
-	log.Printf("Имя тренера %d обновлено на: %s", trainerId, name)
+	logger.AdminInfo(chatId, "Тренер %d обновлен: %s", trainerId, name)
 	telegram.SendMessage(botUrl, chatId, "✅ <b>ФИО тренера обновлено!</b>\n\n"+
 		"👤 Новое имя: "+name, telegram.CreateBackToTrainersMenuKeyboard())
 	return states.SetAdminKeyboard()
@@ -236,7 +236,7 @@ func SetEditTrainerTgId(botUrl string, chatId int, update telegram.Update, repo 
 	// Получаем существующего тренера
 	trainer, err := repo.GetTrainerByID(trainerId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренера %d: %v", trainerId, err)
+		logger.AdminError(chatId, "Получение тренера %d: %v", trainerId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Тренер не найден</b>\n\n"+
 			"🔍 Возможно, тренер был удален.", telegram.CreateBackToTrainersMenuKeyboard())
 		return states.SetAdminKeyboard()
@@ -270,7 +270,7 @@ func SetEditTrainerInfo(botUrl string, chatId int, update telegram.Update, repo 
 	// Получаем существующего тренера
 	trainer, err := repo.GetTrainerByID(trainerId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренера %d: %v", trainerId, err)
+		logger.AdminError(chatId, "Получение тренера %d: %v", trainerId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Тренер не найден</b>\n\n"+
 			"🔍 Возможно, тренер был удален.", telegram.CreateBackToTrainersMenuKeyboard())
 		return states.SetAdminKeyboard()
@@ -338,7 +338,7 @@ func CreateTrack(botUrl string, chatId int, messageId int) states.State {
 
 func SetTrackName(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	name := update.Message.Text
-	log.Printf("Пользователь %d устанавливает название трека: %s", chatId, name)
+	logger.AdminInfo(chatId, "Название трека: %s", name)
 
 	tempData := &states.TempTrackData{Name: name}
 	newState := states.SetEnterTrackInfo(0).SetTempTrackData(tempData)
@@ -350,7 +350,7 @@ func SetTrackName(botUrl string, chatId int, update telegram.Update, repo databa
 
 func SetTrackInfo(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	info := update.Message.Text
-	log.Printf("Пользователь %d устанавливает информацию о треке: %s", chatId, info)
+	logger.AdminInfo(chatId, "Информация о треке: %s", info)
 
 	tempData := state.GetTempTrackData()
 	tempData.Info = info
@@ -373,14 +373,14 @@ func ConfirmTrackCreation(botUrl string, chatId int, messageId int, repo databas
 
 	_, err := repo.CreateTrack(track)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось создать трек: %v", err)
+		logger.AdminError(chatId, "Создание трека: %v", err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания трассы</b>\n\n"+
 			"Ошибка сохранения.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToTracksMenuKeyboard())
 		return states.SetAdminKeyboard()
 	}
 
-	log.Printf("Трек создан: %s", track.Name)
+	logger.AdminInfo(chatId, "Трек создан: %s", track.Name)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Трасса создана!</b>\n\n"+
 		"🏁 Название: "+track.Name, telegram.CreateBackToTracksMenuKeyboard())
 	return states.SetAdminKeyboard()
@@ -514,7 +514,7 @@ func SetTrainingTrack(botUrl string, chatId int, messageId int, trackId uint, re
 
 func SetTrainingStartTime(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	startTime := update.Message.Text
-	log.Printf("Пользователь %d устанавливает время начала тренировки: %s", chatId, startTime)
+	logger.AdminInfo(chatId, "Время начала: %s", startTime)
 
 	telegram.SendMessage(botUrl, chatId, "🕕 Введите время окончания тренировки:\n\n"+
 		"💡 <i>Пример: 2024-01-15 20:00</i>", telegram.CreateBackToScheduleMenuKeyboard())
@@ -529,7 +529,7 @@ func SetTrainingStartTime(botUrl string, chatId int, update telegram.Update, rep
 
 func SetTrainingEndTime(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
 	endTime := update.Message.Text
-	log.Printf("Пользователь %d устанавливает время окончания тренировки: %s", chatId, endTime)
+	logger.AdminInfo(chatId, "Время окончания: %s", endTime)
 
 	telegram.SendMessage(botUrl, chatId, "👥 Введите максимальное количество участников:\n\n"+
 		"💡 <i>Пример: 10</i>", telegram.CreateBackToScheduleMenuKeyboard())
@@ -598,7 +598,7 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 	// Парсим время начала и окончания
 	startTime, err := time.Parse("2006-01-02 15:04", tempData.StartTime)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось распарсить время начала: %v", err)
+		logger.AdminError(chatId, "Парсинг времени начала: %v", err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
 			"Неверный формат времени начала.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToScheduleMenuKeyboard())
@@ -607,7 +607,7 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 
 	endTime, err := time.Parse("2006-01-02 15:04", tempData.EndTime)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось распарсить время окончания: %v", err)
+		logger.AdminError(chatId, "Парсинг времени окончания: %v", err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
 			"Неверный формат времени окончания.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToScheduleMenuKeyboard())
@@ -641,14 +641,14 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 
 	_, err = repo.CreateTraining(training)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось создать тренировку: %v", err)
+		logger.AdminError(chatId, "Создание тренировки: %v", err)
 		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка создания тренировки</b>\n\n"+
 			"Ошибка сохранения.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToScheduleMenuKeyboard())
 		return states.SetAdminKeyboard()
 	}
 
-	log.Printf("Тренировка создана: ID %d", training.ID)
+	logger.AdminInfo(chatId, "Тренировка создана: %d", training.ID)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Тренировка создана!</b>\n\n"+
 		"🕐 Начало: "+training.StartTime.Format("2006-01-02 15:04")+"\n"+
 		"🕕 Окончание: "+training.EndTime.Format("2006-01-02 15:04"), telegram.CreateBackToScheduleMenuKeyboard())
@@ -664,12 +664,12 @@ func EditTrackName(botUrl string, chatId int, messageId int, trackId uint) state
 
 func SetEditTrackName(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, trackId uint) states.State {
 	name := update.Message.Text
-	log.Printf("Пользователь %d обновляет название трека %d на: %s", chatId, trackId, name)
+	logger.AdminInfo(chatId, "Обновление трека %d: %s", trackId, name)
 
 	// Получаем существующую трассу
 	track, err := repo.GetTrackByID(trackId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить трек %d: %v", trackId, err)
+		logger.AdminError(chatId, "Получение трека %d: %v", trackId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Трасса не найдена</b>\n\n"+
 			"🔍 Возможно, трасса была удалена.", telegram.CreateBackToTracksMenuKeyboard())
 		return states.SetAdminKeyboard()
@@ -679,14 +679,14 @@ func SetEditTrackName(botUrl string, chatId int, update telegram.Update, repo da
 	track.Name = name
 	err = repo.UpdateTrack(trackId, track)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось обновить имя трека %d: %v", trackId, err)
+		logger.AdminError(chatId, "Обновление трека %d: %v", trackId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Ошибка обновления названия трассы</b>\n\n"+
 			"Ошибка сохранения.\n"+
 			"Обратитесь к администратору.", telegram.CreateBackToTracksMenuKeyboard())
 		return states.SetAdminKeyboard()
 	}
 
-	log.Printf("Название трека %d обновлено на: %s", trackId, name)
+	logger.AdminInfo(chatId, "Трек %d обновлен: %s", trackId, name)
 	telegram.SendMessage(botUrl, chatId, "✅ <b>Название трассы обновлено!</b>\n\n"+
 		"🏁 Новое название: "+name, telegram.CreateBackToTracksMenuKeyboard())
 	return states.SetAdminKeyboard()
@@ -705,7 +705,7 @@ func SetEditTrackInfo(botUrl string, chatId int, update telegram.Update, repo da
 	// Получаем существующую трассу
 	track, err := repo.GetTrackByID(trackId)
 	if err != nil {
-		log.Printf("ОШИБКА: Не удалось получить трек %d: %v", trackId, err)
+		logger.AdminError(chatId, "Получение трека %d: %v", trackId, err)
 		telegram.SendMessage(botUrl, chatId, "❌ <b>Трасса не найдена</b>\n\n"+
 			"🔍 Возможно, трасса была удалена.", telegram.CreateBackToTracksMenuKeyboard())
 		return states.SetAdminKeyboard()

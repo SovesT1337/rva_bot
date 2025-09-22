@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"x.localhost/rvabot/internal/logger"
+
 	"gorm.io/gorm"
 )
 
@@ -15,15 +17,15 @@ func (r *ContentRepository) CreateTraining(content *Training) (uint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	log.Printf("Creating training: TrainerID=%d, TrackID=%d", content.TrainerID, content.TrackID)
+	logger.DatabaseInfo("Создание тренировки: TrainerID=%d, TrackID=%d", content.TrainerID, content.TrackID)
 
 	result := db.WithContext(ctx).Create(content)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось создать тренировку: %v", result.Error)
+		logger.DatabaseError("Создание тренировки: %v", result.Error)
 		return 0, result.Error
 	}
 
-	log.Printf("Training created successfully: ID=%d", content.ID)
+	logger.DatabaseInfo("Тренировка создана: %d", content.ID)
 	return content.ID, nil
 }
 
@@ -34,7 +36,7 @@ func (r *ContentRepository) GetTrainingById(id uint) (*Training, error) {
 	var training Training
 	result := db.WithContext(ctx).First(&training, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренировку %d: %v", id, result.Error)
+		logger.DatabaseError("Получение тренировки %d: %v", id, result.Error)
 		return nil, result.Error
 	}
 
@@ -48,7 +50,7 @@ func (r *ContentRepository) GetTrainings() ([]Training, error) {
 	var trainings []Training
 	result := db.WithContext(ctx).Find(&trainings)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренировки: %v", result.Error)
+		logger.DatabaseError("Получение тренировок: %v", result.Error)
 		return nil, result.Error
 	}
 
@@ -62,7 +64,7 @@ func (r *ContentRepository) GetActiveTrainings() ([]Training, error) {
 	var trainings []Training
 	result := db.WithContext(ctx).Where("is_active = ?", true).Find(&trainings)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить активные тренировки: %v", result.Error)
+		logger.DatabaseError("Получение активных тренировок: %v", result.Error)
 		return nil, result.Error
 	}
 
@@ -75,11 +77,11 @@ func (r *ContentRepository) UpdateTraining(id uint, training *Training) error {
 
 	result := db.WithContext(ctx).Model(&Training{}).Where("id = ?", id).Updates(training)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось обновить тренировку %d: %v", id, result.Error)
+		logger.DatabaseError("Обновление тренировки %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Training updated successfully: ID=%d", id)
+	logger.DatabaseInfo("Тренировка обновлена: %d", id)
 	return nil
 }
 
@@ -89,11 +91,11 @@ func (r *ContentRepository) DeleteTraining(id uint) error {
 
 	result := db.WithContext(ctx).Delete(&Training{}, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось удалить тренировку %d: %v", id, result.Error)
+		logger.DatabaseError("Удаление тренировки %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Training deleted successfully: ID=%d", id)
+	logger.DatabaseInfo("Тренировка удалена: %d", id)
 	return nil
 }
 
@@ -101,15 +103,15 @@ func (r *ContentRepository) CreateTrainer(content *Trainer) (uint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	log.Printf("Creating trainer: %s (TgId: %s, ChatId: %d)", content.Name, content.TgId, content.ChatId)
+	logger.DatabaseInfo("Создание тренера: %s (TgId: %s, ChatId: %d)", content.Name, content.TgId, content.ChatId)
 
 	result := db.WithContext(ctx).Create(content)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось создать тренера %s: %v", content.Name, result.Error)
+		logger.DatabaseError("Создание тренера %s: %v", content.Name, result.Error)
 		return 0, result.Error
 	}
 
-	log.Printf("Trainer created successfully: %s (ID: %d)", content.Name, content.ID)
+	logger.DatabaseInfo("Тренер создан: %s (%d)", content.Name, content.ID)
 	return content.ID, nil
 }
 
@@ -120,7 +122,7 @@ func (r *ContentRepository) GetTrainerByID(ID uint) (*Trainer, error) {
 	var trainer Trainer
 	result := db.WithContext(ctx).First(&trainer, ID)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренера %d: %v", ID, result.Error)
+		logger.DatabaseError("Не удалось получить тренера %d: %v", ID, result.Error)
 		return nil, result.Error
 	}
 
@@ -134,7 +136,7 @@ func (r *ContentRepository) GetTrainers() ([]Trainer, error) {
 	var trainers []Trainer
 	result := db.WithContext(ctx).Find(&trainers)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить тренеров: %v", result.Error)
+		logger.DatabaseError("Не удалось получить тренеров: %v", result.Error)
 		return nil, result.Error
 	}
 
@@ -147,11 +149,11 @@ func (r *ContentRepository) UpdateTrainer(id uint, trainer *Trainer) error {
 
 	result := db.WithContext(ctx).Model(&Trainer{}).Where("id = ?", id).Updates(trainer)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось обновить тренера %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось обновить тренера %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Trainer updated successfully: ID=%d", id)
+	logger.DatabaseInfo("Тренер обновлен: ID=%d", id)
 	return nil
 }
 
@@ -161,11 +163,11 @@ func (r *ContentRepository) DeleteTrainer(id uint) error {
 
 	result := db.WithContext(ctx).Delete(&Trainer{}, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось удалить тренера %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось удалить тренера %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Trainer deleted successfully: ID=%d", id)
+	logger.DatabaseInfo("Тренер удален: ID=%d", id)
 	return nil
 }
 
@@ -173,15 +175,15 @@ func (r *ContentRepository) CreateTrack(content *Track) (uint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	log.Printf("Creating track: %s", content.Name)
+	logger.DatabaseInfo("Создание трека: %s", content.Name)
 
 	result := db.WithContext(ctx).Create(content)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось создать трек %s: %v", content.Name, result.Error)
+		logger.DatabaseError("Не удалось создать трек %s: %v", content.Name, result.Error)
 		return 0, result.Error
 	}
 
-	log.Printf("Track created successfully: %s (ID: %d)", content.Name, content.ID)
+	logger.DatabaseInfo("Трек создан: %s (ID: %d)", content.Name, content.ID)
 	return content.ID, nil
 }
 
@@ -192,7 +194,7 @@ func (r *ContentRepository) GetTrackByID(id uint) (*Track, error) {
 	var track Track
 	result := db.WithContext(ctx).First(&track, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить трек %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось получить трек %d: %v", id, result.Error)
 		return nil, result.Error
 	}
 
@@ -206,7 +208,7 @@ func (r *ContentRepository) GetTracks() ([]Track, error) {
 	var tracks []Track
 	result := db.WithContext(ctx).Find(&tracks)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить треки: %v", result.Error)
+		logger.DatabaseError("Не удалось получить треки: %v", result.Error)
 		return nil, result.Error
 	}
 
@@ -219,11 +221,11 @@ func (r *ContentRepository) UpdateTrack(id uint, track *Track) error {
 
 	result := db.WithContext(ctx).Model(&Track{}).Where("id = ?", id).Updates(track)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось обновить трек %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось обновить трек %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Track updated successfully: ID=%d", id)
+	logger.DatabaseInfo("Трек обновлен: ID=%d", id)
 	return nil
 }
 
@@ -233,11 +235,11 @@ func (r *ContentRepository) DeleteTrack(id uint) error {
 
 	result := db.WithContext(ctx).Delete(&Track{}, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось удалить трек %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось удалить трек %d: %v", id, result.Error)
 		return result.Error
 	}
 
-	log.Printf("Track deleted successfully: ID=%d", id)
+	logger.DatabaseInfo("Трек удален: ID=%d", id)
 	return nil
 }
 
@@ -245,15 +247,15 @@ func (r *ContentRepository) CreateUser(user *User) (uint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	log.Printf("Creating user: %s (ChatId: %d)", user.Name, user.ChatId)
+	logger.DatabaseInfo("Создание пользователя: %s (ChatId: %d)", user.Name, user.ChatId)
 
 	result := db.WithContext(ctx).Create(user)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось создать пользователя %s: %v", user.Name, result.Error)
+		logger.DatabaseError("Не удалось создать пользователя %s: %v", user.Name, result.Error)
 		return 0, result.Error
 	}
 
-	log.Printf("User created successfully: %s (ID: %d)", user.Name, user.ID)
+	logger.DatabaseInfo("Пользователь создан: %s (ID: %d)", user.Name, user.ID)
 	return user.ID, nil
 }
 
@@ -264,7 +266,7 @@ func (r *ContentRepository) GetUserByID(id uint) (*User, error) {
 	var user User
 	result := db.WithContext(ctx).First(&user, id)
 	if result.Error != nil {
-		log.Printf("ОШИБКА: Не удалось получить пользователя %d: %v", id, result.Error)
+		logger.DatabaseError("Не удалось получить пользователя %d: %v", id, result.Error)
 		return nil, result.Error
 	}
 
@@ -281,7 +283,7 @@ func (r *ContentRepository) GetUserByChatId(chatId int) (*User, error) {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("User with chat_id %d not found", chatId)
 		} else {
-			log.Printf("ОШИБКА: Не удалось получить пользователя по chat_id %d: %v", chatId, result.Error)
+			logger.DatabaseError("Не удалось получить пользователя по chat_id %d: %v", chatId, result.Error)
 		}
 		return nil, result.Error
 	}
