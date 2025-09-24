@@ -9,11 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
+// Database представляет подключение к базе данных
+type Database struct {
+	db *gorm.DB
+}
 
-func InitDB(filepath string) error {
-	var err error
-
+// NewDatabase создает новое подключение к базе данных
+func NewDatabase(filepath string) (*Database, error) {
 	config := &gorm.Config{
 		// Отключаем логирование для продакшена (можно включить для отладки)
 		// Logger: logger.Default.LogMode(logger.Silent),
@@ -21,14 +23,14 @@ func InitDB(filepath string) error {
 
 	sqliteConfig := sqlite.Open(filepath + "?_journal_mode=WAL&_synchronous=NORMAL&_cache_size=1000&_foreign_keys=ON")
 
-	db, err = gorm.Open(sqliteConfig, config)
+	db, err := gorm.Open(sqliteConfig, config)
 	if err != nil {
-		return fmt.Errorf("ошибка подключения к БД: %w", err)
+		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return fmt.Errorf("ошибка получения DB: %w", err)
+		return nil, fmt.Errorf("ошибка получения DB: %w", err)
 	}
 
 	sqlDB.SetMaxOpenConns(25)
@@ -39,27 +41,59 @@ func InitDB(filepath string) error {
 	defer cancel()
 
 	if err := sqlDB.PingContext(ctx); err != nil {
-		return fmt.Errorf("ошибка тестирования соединения: %w", err)
+		return nil, fmt.Errorf("ошибка тестирования соединения: %w", err)
 	}
 
-	if err := db.AutoMigrate(&Track{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
+	database := &Database{db: db}
+
+	// Выполняем миграции
+	if err := database.migrate(); err != nil {
+		return nil, fmt.Errorf("ошибка миграции: %w", err)
 	}
-	if err := db.AutoMigrate(&Trainer{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
+
+	return database, nil
+}
+
+// migrate выполняет миграции базы данных
+func (d *Database) migrate() error {
+	models := []interface{}{
+		&Track{},
+		&Trainer{},
+		&Admin{},
+		&Training{},
+		&User{},
+		&TrainingRegistration{},
+		&TrainingRequest{},
 	}
-	if err := db.AutoMigrate(&Admin{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
-	}
-	if err := db.AutoMigrate(&Training{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
-	}
-	if err := db.AutoMigrate(&User{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
-	}
-	if err := db.AutoMigrate(&TrainingRegistration{}); err != nil {
-		return fmt.Errorf("ошибка миграции: %w", err)
+
+	for _, model := range models {
+		if err := d.db.AutoMigrate(model); err != nil {
+			return fmt.Errorf("ошибка миграции %T: %w", model, err)
+		}
 	}
 
 	return nil
+}
+
+// GetDB возвращает экземпляр GORM DB
+func (d *Database) GetDB() *gorm.DB {
+	return d.db
+}
+
+// Close закрывает подключение к базе данных
+func (d *Database) Close() error {
+	sqlDB, err := d.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
+// Ping проверяет подключение к базе данных
+func (d *Database) Ping(ctx context.Context) error {
+	sqlDB, err := d.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.PingContext(ctx)
 }

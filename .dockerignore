@@ -1,0 +1,27 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+
+# Development
+.env
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+rva_bot
+rvabot
+*.exe

@@ -61,3 +61,12 @@ type TrainingRegistration struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
+
+type TrainingRequest struct {
+	ID         uint `gorm:"primaryKey"`
+	UserID     uint
+	Message    string
+	IsReviewed bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}

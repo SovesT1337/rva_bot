@@ -1,5 +1,9 @@
 package database
 
+import (
+	"gorm.io/gorm"
+)
+
 type ContentRepositoryInterface interface {
 	CreateTrainer(content *Trainer) (uint, error)
 	GetTrainerByID(ID uint) (*Trainer, error)
@@ -46,8 +50,21 @@ type ContentRepositoryInterface interface {
 	GetTrainersByTrack(trackId uint) ([]Trainer, error)
 	GetTracksWithActiveTrainings() ([]Track, error)
 	GetUserTrainings(userId uint) ([]Training, error)
+
+	CreateTrainingRequest(request *TrainingRequest) (uint, error)
+	GetTrainingRequestByID(id uint) (*TrainingRequest, error)
+	GetTrainingRequests() ([]TrainingRequest, error)
+	GetUnreviewedTrainingRequests() ([]TrainingRequest, error)
+	UpdateTrainingRequest(id uint, request *TrainingRequest) error
+	DeleteTrainingRequest(id uint) error
 }
 
-func NewContentRepository() ContentRepositoryInterface {
-	return &ContentRepository{}
+type ContentRepository struct {
+	db *gorm.DB
+}
+
+func NewContentRepository(database *Database) ContentRepositoryInterface {
+	return &ContentRepository{
+		db: database.GetDB(),
+	}
 }

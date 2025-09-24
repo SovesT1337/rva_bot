@@ -6,12 +6,69 @@ import (
 	"x.localhost/rvabot/internal/database"
 )
 
+// createBackButton создает кнопку "Назад"
+func createBackButton(callbackData string) inlineKeyboardButton {
+	return inlineKeyboardButton{
+		Text:         "🔙 Назад",
+		CallbackData: callbackData,
+	}
+}
+
+// createCancelButton создает кнопку "Отмена"
+func createCancelButton() inlineKeyboardButton {
+	return inlineKeyboardButton{
+		Text:         "❌ Отмена",
+		CallbackData: "cancel",
+	}
+}
+
+// createConfirmButton создает кнопку "Подтвердить"
+func createConfirmButton() inlineKeyboardButton {
+	return inlineKeyboardButton{
+		Text:         "✅ Подтвердить",
+		CallbackData: "confirm",
+	}
+}
+
+// createHomeButton создает кнопку "Главное меню"
+func createHomeButton() inlineKeyboardButton {
+	return inlineKeyboardButton{
+		Text:         "🏠 Главное меню",
+		CallbackData: "start",
+	}
+}
+
+// createKeyboardWithBack создает клавиатуру с кнопкой "Назад"
+func createKeyboardWithBack(backCallback string) inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{createBackButton(backCallback)},
+		},
+	}
+}
+
+// createKeyboardWithCancel создает клавиатуру с кнопкой "Отмена"
+func createKeyboardWithCancel() inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{createCancelButton()},
+		},
+	}
+}
+
+// createConfirmationKeyboard создает клавиатуру подтверждения
+func createConfirmationKeyboard() inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{createConfirmButton(), createCancelButton()},
+		},
+	}
+}
+
 func CreateBaseKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🏠 Главное меню", CallbackData: "start"},
-			},
+			{createHomeButton()},
 		},
 	}
 }
@@ -20,7 +77,7 @@ func CreateNavigationKeyboard() inlineKeyboardMarkup {
 	return inlineKeyboardMarkup{
 		InlineKeyboard: [][]inlineKeyboardButton{
 			{
-				{Text: "🏠 Главное меню", CallbackData: "start"},
+				createHomeButton(),
 				{Text: "❓ Помощь", CallbackData: "help"},
 			},
 		},
@@ -28,69 +85,36 @@ func CreateNavigationKeyboard() inlineKeyboardMarkup {
 }
 
 func CreateBackToAdminKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🔙 Назад к админке", CallbackData: "admin"},
-			},
-		},
-	}
+	return createKeyboardWithBack("admin")
 }
 
 func CreateBackToInfoKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🔙 Назад", CallbackData: "Info"},
-			},
-		},
-	}
+	return createKeyboardWithBack("Info")
 }
 
 func CreateBackToTrainersMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🔙 Назад к тренерам", CallbackData: "trainersMenu"},
-			},
-		},
-	}
+	return createKeyboardWithBack("trainersMenu")
 }
 
 func CreateBackToTracksMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🔙 Назад", CallbackData: "tracksMenu"},
-			},
-		},
-	}
+	return createKeyboardWithBack("tracksMenu")
 }
 
 func CreateBackToScheduleMenuKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "🔙 Назад", CallbackData: "scheduleMenu"},
-			},
-		},
-	}
+	return createKeyboardWithBack("scheduleMenu")
 }
 
 func CreateCancelKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "❌ Отмена", CallbackData: "cancel"},
-			},
-		},
-	}
+	return createKeyboardWithCancel()
 }
 
 func CreateStartKeyboard(chatId int, repo database.ContentRepositoryInterface) inlineKeyboardMarkup {
 	keyboard := [][]inlineKeyboardButton{
 		{
 			{Text: "🏃‍♂️ Записаться на тренировку", CallbackData: "BookTraining"},
+		},
+		{
+			{Text: "💡 Предложить тренировку", CallbackData: "suggestTraining"},
 		},
 		{
 			{Text: "ℹ️ Информация о занятиях", CallbackData: "Info"},
@@ -121,6 +145,9 @@ func CreateAdminKeyboard() inlineKeyboardMarkup {
 				{Text: "📅 Расписание", CallbackData: "scheduleMenu"},
 			},
 			{
+				{Text: "💬 Запросы тренировок", CallbackData: "trainingRequests"},
+			},
+			{
 				{Text: "🏠 Главное меню", CallbackData: "start"},
 			},
 		},
@@ -136,9 +163,13 @@ func CreateTrainersListWithActionsKeyboard(trainers []database.Trainer) inlineKe
 	})
 
 	// Добавляем кнопки для каждого тренера
-	for _, trainer := range trainers {
+	for i, trainer := range trainers {
+		// Основная кнопка с именем тренера
 		buttons = append(buttons, []inlineKeyboardButton{
-			{Text: fmt.Sprintf("✏️ %s", trainer.Name), CallbackData: fmt.Sprintf("editTrainerName_%d", trainer.ID)},
+			{Text: fmt.Sprintf("%d. ✏️ %s", i+1, trainer.Name), CallbackData: fmt.Sprintf("editTrainerName_%d", trainer.ID)},
+		})
+		// Кнопки действий в отдельной строке
+		buttons = append(buttons, []inlineKeyboardButton{
 			{Text: "📱", CallbackData: fmt.Sprintf("editTrainerTgId_%d", trainer.ID)},
 			{Text: "📄", CallbackData: fmt.Sprintf("editTrainerInfo_%d", trainer.ID)},
 			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTrainer_%d", trainer.ID)},
@@ -162,9 +193,13 @@ func CreateTracksListWithActionsKeyboard(tracks []database.Track) inlineKeyboard
 	})
 
 	// Добавляем кнопки для каждой трассы
-	for _, track := range tracks {
+	for i, track := range tracks {
+		// Основная кнопка с названием трассы
 		buttons = append(buttons, []inlineKeyboardButton{
-			{Text: fmt.Sprintf("✏️ %s", track.Name), CallbackData: fmt.Sprintf("editTrackName_%d", track.ID)},
+			{Text: fmt.Sprintf("%d. ✏️ %s", i+1, track.Name), CallbackData: fmt.Sprintf("editTrackName_%d", track.ID)},
+		})
+		// Кнопки действий в отдельной строке
+		buttons = append(buttons, []inlineKeyboardButton{
 			{Text: "📄", CallbackData: fmt.Sprintf("editTrackInfo_%d", track.ID)},
 			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTrack_%d", track.ID)},
 		})
@@ -187,13 +222,13 @@ func CreateTrainingsListWithActionsKeyboard(trainings []database.Training) inlin
 	})
 
 	// Добавляем кнопки для каждой тренировки
-	for _, training := range trainings {
+	for i, training := range trainings {
 		statusIcon := "🟢"
 		if !training.IsActive {
 			statusIcon = "🔴"
 		}
 		buttons = append(buttons, []inlineKeyboardButton{
-			{Text: fmt.Sprintf("%s %s", statusIcon, training.StartTime.Format("02.01 15:04")), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
+			{Text: fmt.Sprintf("%d. %s %s", i+1, statusIcon, training.StartTime.Format("02.01 15:04")), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
 			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTraining_%d", training.ID)},
 		})
 	}
@@ -229,14 +264,7 @@ func CreateInfoKeyboard() inlineKeyboardMarkup {
 }
 
 func CreateConfirmationKeyboard() inlineKeyboardMarkup {
-	return inlineKeyboardMarkup{
-		InlineKeyboard: [][]inlineKeyboardButton{
-			{
-				{Text: "✅ Подтвердить", CallbackData: "confirm"},
-				{Text: "❌ Отменить", CallbackData: "cancel"},
-			},
-		},
-	}
+	return createConfirmationKeyboard()
 }
 
 func CreateTrainerEditKeyboard(trainerId uint) inlineKeyboardMarkup {
@@ -427,6 +455,24 @@ func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKe
 
 	buttons = append(buttons, []inlineKeyboardButton{
 		{Text: "🔙 Назад к выбору тренера", CallbackData: "backToTrainerSelection"},
+	})
+
+	return inlineKeyboardMarkup{InlineKeyboard: buttons}
+}
+
+func CreateTrainingRequestsKeyboard(requests []database.TrainingRequest) inlineKeyboardMarkup {
+	var buttons [][]inlineKeyboardButton
+
+	// Добавляем кнопки для каждого запроса
+	for i, request := range requests {
+		buttons = append(buttons, []inlineKeyboardButton{
+			{Text: fmt.Sprintf("%d. 👤 Запрос", i+1), CallbackData: fmt.Sprintf("markRequestReviewed_%d", request.ID)},
+		})
+	}
+
+	// Добавляем кнопку "Назад к админке"
+	buttons = append(buttons, []inlineKeyboardButton{
+		{Text: "🔙 Назад к админке", CallbackData: "admin"},
 	})
 
 	return inlineKeyboardMarkup{InlineKeyboard: buttons}

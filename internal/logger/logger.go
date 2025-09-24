@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -92,8 +93,29 @@ func getCallerInfo() (string, int, bool) {
 	return "", 0, false
 }
 
+// maskSensitiveData маскирует чувствительные данные в сообщениях
+func maskSensitiveData(message string) string {
+	// Маскируем токены бота
+	tokenRegex := regexp.MustCompile(`bot\d+:[A-Za-z0-9_-]{35}`)
+	message = tokenRegex.ReplaceAllString(message, "bot***:***")
+
+	// Маскируем API ключи
+	apiKeyRegex := regexp.MustCompile(`[A-Za-z0-9]{32,}`)
+	message = apiKeyRegex.ReplaceAllStringFunc(message, func(match string) string {
+		if len(match) > 8 {
+			return match[:4] + "***" + match[len(match)-4:]
+		}
+		return "***"
+	})
+
+	return message
+}
+
 // formatMessage форматирует сообщение лога
 func (l *Logger) formatMessage(level LogLevel, context, message string) string {
+	// Маскируем чувствительные данные
+	message = maskSensitiveData(message)
+
 	timestamp := time.Now().Format("15:04:05")
 	color := l.getColor(level)
 	levelName := l.getLevelName(level)

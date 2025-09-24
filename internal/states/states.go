@@ -8,7 +8,7 @@ const (
 	StateStartKeyboard = "StateStartKeyboard"
 	StateAdminKeyboard = "StateAdminKeyboard"
 
-	StateSetTrainerName         = "StateEnterTrainerName"
+	StateSetTrainerName         = "StateSetTrainerName"
 	StateSetTrainerTgId         = "StateSetTrainerTgId"
 	StateSetTrainerChatId       = "StateSetTrainerChatId"
 	StateSetTrainerInfo         = "StateSetTrainerInfo"
@@ -43,6 +43,8 @@ const (
 	StateSelectTrackForRegistration        = "StateSelectTrackForRegistration"
 	StateSelectTrainerForRegistration      = "StateSelectTrainerForRegistration"
 	StateSelectTrainingTimeForRegistration = "StateSelectTrainingTimeForRegistration"
+
+	StateSuggestTraining = "StateSuggestTraining"
 )
 
 type State struct {
@@ -296,4 +298,8 @@ func SetSelectTrainerForRegistration() State {
 
 func SetSelectTrainingTimeForRegistration() State {
 	return NewState(StateSelectTrainingTimeForRegistration, nil)
+}
+
+func SetSuggestTraining() State {
+	return NewState(StateSuggestTraining, nil)
 }
