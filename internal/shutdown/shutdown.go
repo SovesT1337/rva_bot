@@ -44,18 +44,14 @@ func (m *Manager) RegisterHandler(handler ShutdownHandler) {
 
 // Start начинает прослушивание сигналов
 func (m *Manager) Start() {
-	signal.Notify(m.shutdownChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-m.shutdownChan
-		logger.BotInfo("Получен сигнал %v, начинаем graceful shutdown...", sig)
-		m.shutdown()
-	}()
+	signal.Notify(m.shutdownChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 }
 
 // Wait блокирует до получения сигнала shutdown
 func (m *Manager) Wait() {
-	<-m.shutdownChan
+	sig := <-m.shutdownChan
+	logger.BotInfo("Получен сигнал %v, начинаем graceful shutdown...", sig)
+	m.shutdown()
 }
 
 // shutdown выполняет graceful shutdown всех зарегистрированных обработчиков

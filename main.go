@@ -157,6 +157,7 @@ func (bs *BotService) Start() error {
 
 	// Запускаем shutdown manager
 	bs.shutdownManager.Start()
+	logger.BotInfo("Бот запущен и готов к работе. Нажмите Ctrl+C для завершения...")
 
 	// Ждем сигнал завершения
 	bs.shutdownManager.Wait()
