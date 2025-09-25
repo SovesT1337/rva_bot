@@ -42,7 +42,7 @@ func NewBotService(cfg *config.Config) *BotService {
 func (bs *BotService) Initialize() error {
 	// Инициализируем базу данных
 	var err error
-	bs.database, err = database.NewDatabase(bs.config.GetDatabaseDSN(), bs.config.GetDatabaseType())
+	bs.database, err = database.NewDatabase(bs.config.GetDatabaseDSN())
 	if err != nil {
 		appErr := errors.WrapError(err, errors.ErrorTypeDatabase, "Ошибка инициализации БД")
 		logger.BotError("Ошибка инициализации БД: %v", appErr)

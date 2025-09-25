@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -26,13 +25,6 @@ type TelegramConfig struct {
 
 // DatabaseConfig содержит настройки базы данных
 type DatabaseConfig struct {
-	Type     string // "sqlite" или "postgres"
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
 	FilePath string // Путь к SQLite файлу
 }
 
@@ -66,13 +58,6 @@ func Load() (*Config, error) {
 	}
 
 	// Database конфигурация
-	config.Database.Type = getEnv("DB_TYPE", "sqlite")
-	config.Database.Host = getEnv("DB_HOST", "localhost")
-	config.Database.Port = getEnv("DB_PORT", "5432")
-	config.Database.User = getEnv("DB_USER", "postgres")
-	config.Database.Password = getEnv("DB_PASSWORD", "")
-	config.Database.DBName = getEnv("DB_NAME", "rva_bot")
-	config.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
 	config.Database.FilePath = getEnv("DB_FILE_PATH", "/data/rva_bot.db")
 
 	// Bot конфигурация
@@ -138,16 +123,8 @@ func (c *Config) Validate() error {
 	}
 
 	// Database конфигурация
-	if c.Database.Host == "" {
-		return errors.NewValidationError("Отсутствует хост БД", "DB_HOST обязателен")
-	}
-
-	if c.Database.User == "" {
-		return errors.NewValidationError("Отсутствует пользователь БД", "DB_USER обязателен")
-	}
-
-	if c.Database.DBName == "" {
-		return errors.NewValidationError("Отсутствует имя БД", "DB_NAME обязателен")
+	if c.Database.FilePath == "" {
+		return errors.NewValidationError("Отсутствует путь к БД", "DB_FILE_PATH обязателен")
 	}
 
 	// Bot конфигурация
@@ -214,23 +191,7 @@ func (c *Config) GetBotURL() string {
 	return c.Telegram.API + c.Telegram.Token
 }
 
-// GetDatabaseDSN возвращает строку подключения к базе данных
+// GetDatabaseDSN возвращает путь к SQLite файлу
 func (c *Config) GetDatabaseDSN() string {
-	if c.Database.Type == "sqlite" {
-		return c.Database.FilePath
-	}
-	// PostgreSQL
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		c.Database.Host,
-		c.Database.Port,
-		c.Database.User,
-		c.Database.Password,
-		c.Database.DBName,
-		c.Database.SSLMode,
-	)
-}
-
-// GetDatabaseType возвращает тип базы данных
-func (c *Config) GetDatabaseType() string {
-	return c.Database.Type
+	return c.Database.FilePath
 }

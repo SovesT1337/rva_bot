@@ -12,7 +12,6 @@ TELEGRAM_API=https://api.telegram.org/bot
 
 ### Database Configuration (SQLite)
 ```
-DB_TYPE=sqlite
 DB_FILE_PATH=/data/rva_bot.db
 ```
 
@@ -36,8 +35,7 @@ SERVER_WRITE_TIMEOUT=10
 
 ## Важные замечания
 
-1. **DB_TYPE**: Используйте `sqlite` для простого развертывания
-2. **DB_FILE_PATH**: Путь к файлу SQLite базы данных (будет создан автоматически)
+1. **DB_FILE_PATH**: Путь к файлу SQLite базы данных (будет создан автоматически)
 3. **TELEGRAM_TOKEN**: Получите токен от @BotFather в Telegram
 4. **Persistent Storage**: Amvera автоматически монтирует `/data` для постоянного хранения
 

@@ -12,6 +12,7 @@ Telegram-бот для управления тренировками в акад
 - 🛡️ Rate limiting для защиты от спама
 - 🚀 Graceful shutdown
 - 🔒 Маскировка чувствительных данных в логах
+- 💾 SQLite база данных для простого развертывания
 
 ## Быстрый старт
 
@@ -26,7 +27,7 @@ cd rva_bot
 2. **Запуск в режиме разработки:**
 ```bash
 make dev
-# Автоматически создаст .env файл и запустит PostgreSQL
+# Автоматически создаст .env файл
 # Отредактируйте TELEGRAM_TOKEN в .env файле
 ```
 
@@ -53,14 +54,11 @@ git clone https://github.com/SovesT1337/rva_bot.git
 cd rva_bot
 ```
 
-2. **Настройка базы данных:**
+2. **Настройка:**
 ```bash
-# Запустите PostgreSQL через Docker
-docker compose up -d postgres
-
 # Создайте .env файл
 cp env.production.example .env
-# Отредактируйте .env файл, добавив токен бота и настройки БД
+# Отредактируйте .env файл, добавив токен бота
 ```
 
 3. **Запуск:**
@@ -75,17 +73,12 @@ go run main.go
 ```bash
 cp env.production.example .env
 # Добавьте TELEGRAM_TOKEN=your_bot_token_here
-# Настройте параметры PostgreSQL если нужно
 ```
 
 2. **Запуск:**
 ```bash
-docker compose up -d
-```
-
-3. **Остановка:**
-```bash
-docker compose down
+go mod tidy
+go run main.go
 ```
 
 ## Конфигурация
@@ -95,13 +88,8 @@ docker compose down
 TELEGRAM_TOKEN=your_bot_token_here
 TELEGRAM_API=https://api.telegram.org/bot
 
-# PostgreSQL Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=rva_bot
-DB_SSLMODE=disable
+# SQLite Configuration
+DB_FILE_PATH=./rva_bot.db
 
 LOG_LEVEL=INFO
 BOT_TIMEOUT=30
@@ -119,12 +107,9 @@ SERVER_WRITE_TIMEOUT=5
 
 ## Развертывание на сервере
 
-1. **Установка Docker:**
+1. **Установка Go:**
 ```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+# Установите Go 1.21+ на ваш сервер
 ```
 
 2. **Клонирование и настройка:**
@@ -137,31 +122,29 @@ cp env.production.example .env
 
 3. **Запуск:**
 ```bash
-make prod
+go mod tidy
+go run main.go
 ```
 
 ### Мониторинг
 
 ```bash
-# Проверка статуса
-docker compose -f docker-compose.prod.yml ps
-
-# Логи
-docker compose -f docker-compose.prod.yml logs -f
-
 # Проверка готовности
 curl http://localhost:8080/ready
+
+# Проверка логов (если используете systemd)
+journalctl -u rva-bot -f
 ```
 
 ### Бэкапы
 
-Ручной бэкап базы данных:
+Ручной бэкап SQLite базы данных:
 ```bash
 # Создание бэкапа
-docker exec rva_bot_postgres_prod pg_dump -U postgres rva_bot > backup_$(date +%Y%m%d_%H%M%S).sql
+cp rva_bot.db backup_$(date +%Y%m%d_%H%M%S).db
 
 # Восстановление из бэкапа
-docker exec -i rva_bot_postgres_prod psql -U postgres rva_bot < backup_file.sql
+cp backup_file.db rva_bot.db
 ```
 
 ### Безопасность
@@ -176,13 +159,9 @@ docker exec -i rva_bot_postgres_prod psql -U postgres rva_bot < backup_file.sql
 
 - `make help` - Показать справку
 - `make dev` - Запуск в режиме разработки
-- `make prod` - Запуск в продакшене
 - `make build` - Собрать приложение
 - `make run` - Запустить приложение
 - `make clean` - Очистить временные файлы
-- `make docker-build` - Собрать Docker образ
-- `make docker-run` - Запустить в Docker
-- `make docker-stop` - Остановить Docker
 
 ## Команды бота
 
@@ -198,7 +177,7 @@ rva_bot/
 ├── internal/
 │   ├── backoff/              # Retry механизм
 │   ├── commands/             # Команды бота
-│   ├── database/             # База данных (PostgreSQL)
+│   ├── database/             # База данных (SQLite)
 │   ├── errors/               # Обработка ошибок
 │   ├── handler/              # Обработчик сообщений
 │   ├── http/                 # HTTP клиент
@@ -213,21 +192,18 @@ rva_bot/
 │   └── validation/           # Валидация данных
 ├── main.go                   # Точка входа
 ├── Makefile                  # Команды для управления
-├── docker-compose.yml        # Docker для разработки
-├── docker-compose.prod.yml   # Docker для продакшена
+├── Dockerfile                # Docker для развертывания
 └── env.production.example    # Пример конфигурации
 ```
 
 ## Требования
 
 - Go 1.21+
-- Docker и Docker Compose
-- PostgreSQL 12+ (запускается автоматически через Docker)
 - Telegram Bot Token от @BotFather
 
 ## Особенности
 
-- **PostgreSQL** - Надежная база данных для продакшена
+- **SQLite** - Простая и надежная база данных
 - **Docker** - Простое развертывание и изоляция
 - **Makefile** - Удобные команды для управления
 - **Graceful Shutdown** - Корректное завершение работы
