@@ -1,21 +1,52 @@
-version: '3.8'
-
 services:
-  rva-bot:
-    build: .
+  postgres:
+    image: postgres:15-alpine
+    container_name: rva_bot_postgres_prod
     restart: always
     environment:
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_API=https://api.telegram.org/bot
-      - DB_PATH=/data/rva_bot.db
-      - LOG_LEVEL=INFO
-      - BOT_TIMEOUT=30
-      - MAX_RETRIES=3
-      - SERVER_PORT=8080
-      - SERVER_READ_TIMEOUT=10
-      - SERVER_WRITE_TIMEOUT=10
+      POSTGRES_DB: ${DB_NAME:-rva_bot}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - bot_data:/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  rva-bot:
+    build: .
+    container_name: rva_bot_app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_API=${TELEGRAM_API:-https://api.telegram.org/bot}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-rva_bot}
+      - DB_SSLMODE=${DB_SSLMODE:-require}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BOT_TIMEOUT=${BOT_TIMEOUT:-30}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - SERVER_PORT=8080
+      - SERVER_READ_TIMEOUT=${SERVER_READ_TIMEOUT:-10}
+      - SERVER_WRITE_TIMEOUT=${SERVER_WRITE_TIMEOUT:-10}
+    volumes:
       - ./logs:/app/logs
     ports:
       - "8080:8080"
@@ -33,5 +64,5 @@ services:
           memory: 256M
 
 volumes:
-  bot_data:
+  postgres_data:
     driver: local

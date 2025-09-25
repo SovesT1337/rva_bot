@@ -14,9 +14,32 @@ Telegram-бот для управления тренировками в акад
 - 🚀 Graceful shutdown
 - 🔒 Маскировка чувствительных данных в логах
 
-## Установка
+## Быстрый старт
 
-### Локально
+### С помощью Makefile (рекомендуется)
+
+1. **Клонирование и настройка:**
+```bash
+git clone <your-repo-url>
+cd rva_bot
+make install-deps
+```
+
+2. **Запуск в режиме разработки:**
+```bash
+make dev
+# Автоматически создаст .env файл и запустит PostgreSQL
+# Отредактируйте TELEGRAM_TOKEN в .env файле
+```
+
+3. **Запуск в продакшене:**
+```bash
+make prod
+```
+
+### Ручная установка
+
+#### Локально
 
 1. **Клонирование:**
 ```bash
@@ -27,7 +50,7 @@ cd rva_bot
 2. **Настройка базы данных:**
 ```bash
 # Запустите PostgreSQL через Docker
-docker-compose up -d postgres
+docker compose up -d postgres
 
 # Создайте .env файл
 cp env.production.example .env
@@ -40,7 +63,7 @@ go mod tidy
 go run main.go
 ```
 
-### Docker
+#### Docker
 
 1. **Создание .env файла:**
 ```bash
@@ -51,12 +74,12 @@ cp env.production.example .env
 
 2. **Запуск:**
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 3. **Остановка:**
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## Конфигурация
@@ -111,28 +134,37 @@ SERVER_WRITE_TIMEOUT=5
 }
 ```
 
-## Production Deployment
+## Развертывание на сервере
 
-### Docker Production
-
-1. **Создайте production конфигурацию:**
+1. **Установка Docker:**
 ```bash
-cp env.production.example .env.production
-# Отредактируйте .env.production, добавив реальный токен
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-2. **Запуск в production:**
+2. **Клонирование и настройка:**
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+git clone <your-repo-url> /opt/rva_bot
+cd /opt/rva_bot
+cp env.production.example .env
+# Отредактируйте .env файл с вашими настройками
 ```
 
-3. **Мониторинг:**
+3. **Запуск:**
+```bash
+make prod
+```
+
+### Мониторинг
+
 ```bash
 # Проверка статуса
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # Логи
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Health check
 curl http://localhost:8080/health
@@ -140,13 +172,13 @@ curl http://localhost:8080/health
 
 ### Бэкапы
 
-Автоматический бэкап базы данных:
+Ручной бэкап базы данных:
 ```bash
-# Ручной бэкап
-./scripts/backup.sh
+# Создание бэкапа
+docker exec rva_bot_postgres_prod pg_dump -U postgres rva_bot > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# Автоматический бэкап (cron)
-0 2 * * * /path/to/rva_bot/scripts/backup.sh
+# Восстановление из бэкапа
+docker exec -i rva_bot_postgres_prod psql -U postgres rva_bot < backup_file.sql
 ```
 
 ### Безопасность
@@ -158,7 +190,19 @@ curl http://localhost:8080/health
 - ✅ Health checks и мониторинг
 - ✅ Маскировка токенов в логах
 
-## Команды
+## Команды Makefile
+
+- `make help` - Показать справку
+- `make dev` - Запуск в режиме разработки
+- `make prod` - Запуск в продакшене
+- `make build` - Собрать приложение
+- `make run` - Запустить приложение
+- `make clean` - Очистить временные файлы
+- `make docker-build` - Собрать Docker образ
+- `make docker-run` - Запустить в Docker
+- `make docker-stop` - Остановить Docker
+
+## Команды бота
 
 - `/start` - Главное меню
 - `/help` - Справка
