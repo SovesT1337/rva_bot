@@ -1,0 +1,30 @@
+# Amvera конфигурация для RVA Bot
+# Telegram-бот для управления тренировками в академии бега
+
+# Секция meta - определяет окружение и инструменты сборки
+meta:
+  environment: go
+  toolchain:
+    name: go
+    version: "1.21"
+
+# Секция build - параметры сборки (необязательная для Go)
+# build:
+#   args: -ldflags="-s -w"
+
+# Секция run - параметры запуска
+run:
+  # Имя исполняемого файла (собранного из main.go)
+  binaryName: rva_bot
+  # Аргументы запуска (если нужны)
+  # args: --config=production
+  # Переменные окружения задаются в панели Amvera
+  # TELEGRAM_TOKEN - токен вашего Telegram бота от @BotFather
+  # DB_HOST - хост базы данных (будет предоставлен Amvera)
+  # DB_USER - пользователь базы данных
+  # DB_PASSWORD - пароль базы данных  
+  # DB_NAME - имя базы данных
+  # DB_PORT - порт базы данных (обычно 5432)
+  # DB_SSLMODE - режим SSL (require для продакшена)
+  # LOG_LEVEL - уровень логирования (INFO)
+  # SERVER_PORT - порт сервера (8080)
