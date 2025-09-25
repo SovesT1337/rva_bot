@@ -22,7 +22,11 @@ func NewDatabase(dsn string) (*Database, error) {
 		// Logger: logger.Default.LogMode(logger.Silent),
 	}
 
-	db, err := gorm.Open(sqlite.Open(dsn), config)
+	// Настраиваем GORM для использования modernc.org/sqlite
+	db, err := gorm.Open(sqlite.Dialector{
+		DriverName: "sqlite",
+		DSN:        dsn,
+	}, config)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
