@@ -8,11 +8,14 @@ rva_bot
 rva_bot.exe
 rva_bot_test
 rvabot
+rva-bot
 
 # Environment
 .env
 .env.local
 .env.production
+.env.backup
+.env.development
 
 # Database
 *.db
@@ -39,3 +42,13 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Docker
+.docker/
+
+# Coverage
+coverage.out
+coverage.html
+
+# Go specific
+vendor/
