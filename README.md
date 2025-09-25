@@ -24,10 +24,14 @@ git clone <your-repo-url>
 cd rva_bot
 ```
 
-2. **Настройка:**
+2. **Настройка базы данных:**
 ```bash
-cp .env.example .env
-# Отредактируйте .env файл, добавив токен бота
+# Запустите PostgreSQL через Docker
+docker-compose up -d postgres
+
+# Создайте .env файл
+cp env.production.example .env
+# Отредактируйте .env файл, добавив токен бота и настройки БД
 ```
 
 3. **Запуск:**
@@ -40,8 +44,9 @@ go run main.go
 
 1. **Создание .env файла:**
 ```bash
-cp .env.example .env
+cp env.production.example .env
 # Добавьте TELEGRAM_TOKEN=your_bot_token_here
+# Настройте параметры PostgreSQL если нужно
 ```
 
 2. **Запуск:**
@@ -60,7 +65,15 @@ docker-compose down
 ```env
 TELEGRAM_TOKEN=your_bot_token_here
 TELEGRAM_API=https://api.telegram.org/bot
-DB_PATH=rva_bot.db
+
+# PostgreSQL Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=rva_bot
+DB_SSLMODE=disable
+
 LOG_LEVEL=INFO
 BOT_TIMEOUT=30
 MAX_RETRIES=3
@@ -171,7 +184,7 @@ internal/
 ## Требования
 
 - Go 1.21+
-- SQLite3
+- PostgreSQL 12+ (или Docker для запуска PostgreSQL)
 - Telegram Bot Token от @BotFather
 
 ## Лицензия

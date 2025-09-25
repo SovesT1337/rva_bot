@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"x.localhost/rvabot/internal/errors"
@@ -26,7 +26,12 @@ type TelegramConfig struct {
 
 // DatabaseConfig содержит настройки базы данных
 type DatabaseConfig struct {
-	Path string
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
 }
 
 // BotConfig содержит настройки бота
@@ -59,7 +64,12 @@ func Load() (*Config, error) {
 	}
 
 	// Database конфигурация
-	config.Database.Path = getEnv("DB_PATH", "rva_bot.db")
+	config.Database.Host = getEnv("DB_HOST", "localhost")
+	config.Database.Port = getEnv("DB_PORT", "5432")
+	config.Database.User = getEnv("DB_USER", "postgres")
+	config.Database.Password = getEnv("DB_PASSWORD", "")
+	config.Database.DBName = getEnv("DB_NAME", "rva_bot")
+	config.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
 
 	// Bot конфигурация
 	timeoutStr := getEnv("BOT_TIMEOUT", "30")
@@ -124,13 +134,16 @@ func (c *Config) Validate() error {
 	}
 
 	// Database конфигурация
-	if c.Database.Path == "" {
-		return errors.NewValidationError("Отсутствует путь к БД", "DB_PATH обязателен")
+	if c.Database.Host == "" {
+		return errors.NewValidationError("Отсутствует хост БД", "DB_HOST обязателен")
 	}
 
-	// Проверяем расширение файла БД
-	if !strings.HasSuffix(c.Database.Path, ".db") {
-		return errors.NewValidationError("Неверное расширение БД", "DB_PATH должен заканчиваться на .db")
+	if c.Database.User == "" {
+		return errors.NewValidationError("Отсутствует пользователь БД", "DB_USER обязателен")
+	}
+
+	if c.Database.DBName == "" {
+		return errors.NewValidationError("Отсутствует имя БД", "DB_NAME обязателен")
 	}
 
 	// Bot конфигурация
@@ -195,4 +208,16 @@ func (c *Config) Validate() error {
 // GetBotURL возвращает полный URL бота
 func (c *Config) GetBotURL() string {
 	return c.Telegram.API + c.Telegram.Token
+}
+
+// GetDatabaseDSN возвращает строку подключения к PostgreSQL
+func (c *Config) GetDatabaseDSN() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		c.Database.Host,
+		c.Database.Port,
+		c.Database.User,
+		c.Database.Password,
+		c.Database.DBName,
+		c.Database.SSLMode,
+	)
 }
