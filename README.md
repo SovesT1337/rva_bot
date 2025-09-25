@@ -16,13 +16,12 @@ Telegram-бот для управления тренировками в акад
 
 ## Быстрый старт
 
-### С помощью Makefile (рекомендуется)
+### Разработка
 
-1. **Клонирование и настройка:**
+1. **Клонирование:**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/SovesT1337/rva_bot.git
 cd rva_bot
-make install-deps
 ```
 
 2. **Запуск в режиме разработки:**
@@ -32,18 +31,26 @@ make dev
 # Отредактируйте TELEGRAM_TOKEN в .env файле
 ```
 
-3. **Запуск в продакшене:**
+### Продакшен
+
+1. **Настройка:**
+```bash
+cp env.production.example .env
+# Отредактируйте .env файл с вашими настройками
+```
+
+2. **Запуск:**
 ```bash
 make prod
 ```
 
-### Ручная установка
+## Ручная установка
 
-#### Локально
+### Локально
 
 1. **Клонирование:**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/SovesT1337/rva_bot.git
 cd rva_bot
 ```
 
@@ -63,7 +70,7 @@ go mod tidy
 go run main.go
 ```
 
-#### Docker
+### Docker
 
 1. **Создание .env файла:**
 ```bash
@@ -146,7 +153,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 2. **Клонирование и настройка:**
 ```bash
-git clone <your-repo-url> /opt/rva_bot
+git clone https://github.com/SovesT1337/rva_bot.git /opt/rva_bot
 cd /opt/rva_bot
 cp env.production.example .env
 # Отредактируйте .env файл с вашими настройками
@@ -208,28 +215,51 @@ docker exec -i rva_bot_postgres_prod psql -U postgres rva_bot < backup_file.sql
 - `/help` - Справка
 - `/admin` - Админ-панель (только для админов)
 
-## Структура
+## Структура проекта
 
 ```
-internal/
-├── commands/     # Команды бота
-├── database/     # База данных
-├── errors/       # Обработка ошибок
-├── handler/      # Обработчик сообщений
-├── health/       # Health checks
-├── logger/       # Логирование
-├── ratelimit/    # Rate limiting
-├── shutdown/     # Graceful shutdown
-├── states/       # Состояния диалогов
-├── telegram/     # Telegram API
-└── validation/   # Валидация данных
+rva_bot/
+├── config/                    # Конфигурация
+├── internal/
+│   ├── backoff/              # Retry механизм
+│   ├── commands/             # Команды бота
+│   ├── database/             # База данных (PostgreSQL)
+│   ├── errors/               # Обработка ошибок
+│   ├── handler/              # Обработчик сообщений
+│   ├── health/               # Health checks
+│   ├── http/                 # HTTP клиент
+│   ├── logger/               # Логирование
+│   ├── metrics/              # Метрики
+│   ├── ratelimit/            # Rate limiting
+│   ├── recovery/             # Panic recovery
+│   ├── shutdown/             # Graceful shutdown
+│   ├── state/                # Менеджер состояний
+│   ├── states/               # Состояния диалогов
+│   ├── telegram/             # Telegram API
+│   └── validation/           # Валидация данных
+├── main.go                   # Точка входа
+├── Makefile                  # Команды для управления
+├── docker-compose.yml        # Docker для разработки
+├── docker-compose.prod.yml   # Docker для продакшена
+└── env.production.example    # Пример конфигурации
 ```
 
 ## Требования
 
 - Go 1.21+
-- PostgreSQL 12+ (или Docker для запуска PostgreSQL)
+- Docker и Docker Compose
+- PostgreSQL 12+ (запускается автоматически через Docker)
 - Telegram Bot Token от @BotFather
+
+## Особенности
+
+- **PostgreSQL** - Надежная база данных для продакшена
+- **Docker** - Простое развертывание и изоляция
+- **Makefile** - Удобные команды для управления
+- **Health Checks** - Мониторинг состояния приложения
+- **Graceful Shutdown** - Корректное завершение работы
+- **Rate Limiting** - Защита от спама
+- **Structured Logging** - Детальное логирование
 
 ## Лицензия
 
