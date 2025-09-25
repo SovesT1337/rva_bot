@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -15,13 +16,21 @@ type Database struct {
 }
 
 // NewDatabase создает новое подключение к базе данных
-func NewDatabase(dsn string) (*Database, error) {
+func NewDatabase(dsn string, dbType string) (*Database, error) {
 	config := &gorm.Config{
 		// Отключаем логирование для продакшена (можно включить для отладки)
 		// Logger: logger.Default.LogMode(logger.Silent),
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), config)
+	var db *gorm.DB
+	var err error
+
+	if dbType == "sqlite" {
+		db, err = gorm.Open(sqlite.Open(dsn), config)
+	} else {
+		db, err = gorm.Open(postgres.Open(dsn), config)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
 	}

@@ -10,14 +10,10 @@ TELEGRAM_TOKEN=your_production_bot_token_here
 TELEGRAM_API=https://api.telegram.org/bot
 ```
 
-### Database Configuration (PostgreSQL)
+### Database Configuration (SQLite)
 ```
-DB_HOST=amvera-sovest-cnpg-rva-telegram-bot-rw
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_secure_password_here
-DB_NAME=rva_bot
-DB_SSLMODE=require
+DB_TYPE=sqlite
+DB_FILE_PATH=/data/rva_bot.db
 ```
 
 ### Logging Configuration
@@ -40,21 +36,23 @@ SERVER_WRITE_TIMEOUT=10
 
 ## Важные замечания
 
-1. **DB_HOST**: Используйте доменное имя в формате `amvera-<username>-cnpg-<project_name>-rw`
-   - Замените `sovest` на ваше имя пользователя в Amvera
-   - Замените `rva-telegram-bot` на название вашего проекта
-
-2. **DB_SSLMODE**: Используйте `require` для безопасного подключения в продакшене
-
+1. **DB_TYPE**: Используйте `sqlite` для простого развертывания
+2. **DB_FILE_PATH**: Путь к файлу SQLite базы данных (будет создан автоматически)
 3. **TELEGRAM_TOKEN**: Получите токен от @BotFather в Telegram
+4. **Persistent Storage**: Amvera автоматически монтирует `/data` для постоянного хранения
 
-4. **DB_PASSWORD**: Установите надежный пароль для базы данных
+## Преимущества SQLite
+
+- ✅ Простое развертывание - не нужна отдельная база данных
+- ✅ Автоматическое создание файла базы данных
+- ✅ Данные сохраняются в persistent storage Amvera
+- ✅ Нет проблем с подключением к внешним сервисам
+- ✅ Быстрая работа для небольших проектов
 
 ## Проверка подключения
 
-После настройки переменных окружения приложение должно успешно подключиться к базе данных PostgreSQL в Amvera.
+После настройки переменных окружения приложение должно успешно создать SQLite базу данных в `/data/rva_bot.db`.
 
-Если возникают проблемы с подключением, проверьте:
-- Правильность доменного имени базы данных
-- Корректность пароля и имени пользователя
-- Доступность базы данных в панели Amvera
+Если возникают проблемы, проверьте:
+- Правильность токена Telegram бота
+- Доступность persistent storage в Amvera

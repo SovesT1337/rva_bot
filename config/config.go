@@ -26,12 +26,14 @@ type TelegramConfig struct {
 
 // DatabaseConfig содержит настройки базы данных
 type DatabaseConfig struct {
+	Type     string // "sqlite" или "postgres"
 	Host     string
 	Port     string
 	User     string
 	Password string
 	DBName   string
 	SSLMode  string
+	FilePath string // Путь к SQLite файлу
 }
 
 // BotConfig содержит настройки бота
@@ -64,12 +66,14 @@ func Load() (*Config, error) {
 	}
 
 	// Database конфигурация
+	config.Database.Type = getEnv("DB_TYPE", "sqlite")
 	config.Database.Host = getEnv("DB_HOST", "localhost")
 	config.Database.Port = getEnv("DB_PORT", "5432")
 	config.Database.User = getEnv("DB_USER", "postgres")
 	config.Database.Password = getEnv("DB_PASSWORD", "")
 	config.Database.DBName = getEnv("DB_NAME", "rva_bot")
 	config.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
+	config.Database.FilePath = getEnv("DB_FILE_PATH", "/data/rva_bot.db")
 
 	// Bot конфигурация
 	timeoutStr := getEnv("BOT_TIMEOUT", "30")
@@ -210,8 +214,12 @@ func (c *Config) GetBotURL() string {
 	return c.Telegram.API + c.Telegram.Token
 }
 
-// GetDatabaseDSN возвращает строку подключения к PostgreSQL
+// GetDatabaseDSN возвращает строку подключения к базе данных
 func (c *Config) GetDatabaseDSN() string {
+	if c.Database.Type == "sqlite" {
+		return c.Database.FilePath
+	}
+	// PostgreSQL
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Database.Host,
 		c.Database.Port,
@@ -220,4 +228,9 @@ func (c *Config) GetDatabaseDSN() string {
 		c.Database.DBName,
 		c.Database.SSLMode,
 	)
+}
+
+// GetDatabaseType возвращает тип базы данных
+func (c *Config) GetDatabaseType() string {
+	return c.Database.Type
 }
