@@ -10,14 +10,12 @@ import (
 	"x.localhost/rvabot/internal/database"
 	"x.localhost/rvabot/internal/errors"
 	"x.localhost/rvabot/internal/handler"
-	"x.localhost/rvabot/internal/health"
 	"x.localhost/rvabot/internal/logger"
 	"x.localhost/rvabot/internal/metrics"
 	"x.localhost/rvabot/internal/ratelimit"
 	"x.localhost/rvabot/internal/recovery"
 	"x.localhost/rvabot/internal/shutdown"
 	"x.localhost/rvabot/internal/state"
-	"x.localhost/rvabot/internal/telegram"
 
 	"github.com/joho/godotenv"
 )
@@ -29,7 +27,6 @@ type BotService struct {
 	repo            database.ContentRepositoryInterface
 	rateLimiter     *ratelimit.UserRateLimiter
 	stateManager    *state.Manager
-	healthManager   *health.Manager
 	shutdownManager *shutdown.Manager
 	server          *http.Server
 }
@@ -66,11 +63,7 @@ func (bs *BotService) Initialize() error {
 	// Запускаем метрики
 	metrics.StartMetricsLogger(5 * time.Minute) // Логируем метрики каждые 5 минут
 
-	// Инициализируем health checks
-	bs.healthManager = health.NewManager(5 * time.Second)
-	bs.setupHealthChecks()
-
-	// Инициализируем HTTP сервер для health checks
+	// Инициализируем HTTP сервер
 	bs.setupHTTPServer()
 
 	// Инициализируем shutdown manager
@@ -80,33 +73,10 @@ func (bs *BotService) Initialize() error {
 	return nil
 }
 
-// setupHealthChecks настраивает health checks
-func (bs *BotService) setupHealthChecks() {
-	// Database health check
-	dbCheck := health.NewDatabaseCheck(func(ctx context.Context) error {
-		// Простая проверка подключения к БД
-		_, err := bs.repo.GetTrainers()
-		return err
-	})
-	bs.healthManager.RegisterCheck(dbCheck)
 
-	// Telegram API health check
-	telegramCheck := health.NewTelegramCheck(func(ctx context.Context) error {
-		// Проверяем доступность Telegram API
-		_, err := telegram.GetUpdates(bs.config.GetBotURL(), 0)
-		return err
-	})
-	bs.healthManager.RegisterCheck(telegramCheck)
-
-	// Memory health check
-	memoryCheck := health.NewMemoryCheck(512) // 512MB лимит
-	bs.healthManager.RegisterCheck(memoryCheck)
-}
-
-// setupHTTPServer настраивает HTTP сервер для health checks
+// setupHTTPServer настраивает HTTP сервер
 func (bs *BotService) setupHTTPServer() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", bs.healthManager.HTTPHandler())
 	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
