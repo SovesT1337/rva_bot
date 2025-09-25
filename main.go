@@ -73,7 +73,6 @@ func (bs *BotService) Initialize() error {
 	return nil
 }
 
-
 // setupHTTPServer настраивает HTTP сервер
 func (bs *BotService) setupHTTPServer() {
 	mux := http.NewServeMux()
