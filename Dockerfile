@@ -1,16 +1,13 @@
 FROM golang:1.21-alpine AS builder
 
-# Устанавливаем необходимые пакеты для CGO и SQLite
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-
 WORKDIR /app
 COPY . .
 RUN go mod download
-# Включаем CGO для SQLite
-RUN CGO_ENABLED=1 go build -o rva_bot main.go
+# Собираем без CGO (modernc.org/sqlite не требует CGO)
+RUN CGO_ENABLED=0 go build -o rva_bot main.go
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates sqlite
+RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/rva_bot .
