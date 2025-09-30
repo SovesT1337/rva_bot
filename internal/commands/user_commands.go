@@ -193,7 +193,12 @@ func InfoTrack(botUrl string, chatId int, messageId int, repo database.ContentRe
 }
 
 func InfoFormat(botUrl string, chatId int, messageId int) states.State {
-	message := "Тут пока пусто, потом будет информация о формате тренировок"
+	message := "📚 <b>Формат занятий:</b>\n\n" +
+		"• 🧘 <b>Разминка</b> - обязательная часть тренировки, которая подготовит вас к нагрузке!\n\n" +
+		"• 📝 <b>Теоретическая часть</b> - освещаются не только правила \"из книжки\", но и материал про то, как чувствовать машину лучше, дополненный пройденной практикой тренеров из их карьеры\n\n" +
+		"• 🏎 <b>Практическая часть</b> - 30-40 минут заездов, благодаря которым получится отработать практические умения!\n\n" +
+		"• 📝 <b>Разбор после тренировки</b> - крайне важно зафиксировать успешные аспекты занятия и отметить то, над чем надо работать\n\n" +
+		"• ❤️‍🔥 <b>Индивидуальные занятия</b> в MIKS KARTING / LONATO подразумевают запись онлайн-разбора после тренировки, который можно посмотреть в любой момент"
 
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateBackToInfoKeyboard())
 	return states.SetStartKeyboard()
@@ -227,15 +232,49 @@ func ViewScheduleUser(botUrl string, chatId int, messageId int, repo database.Co
 }
 
 func SetUserName(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
-	name := update.Message.Text
+	name := strings.TrimSpace(update.Message.Text)
+
+	// Валидация имени
+	if len(name) < 2 {
+		telegram.SendMessage(botUrl, chatId, "❌ <b>Ошибка ввода</b>\n\n"+
+			"Имя должно содержать минимум 2 символа.\n"+
+			"Попробуйте еще раз:", telegram.CreateCancelKeyboard())
+		return states.SetEnterUserName()
+	}
 
 	tempData := state.GetTempUserData()
 	tempData.Name = name
 
+	message := "📱 <b>Введите ваш Telegram ID</b>\n\n" +
+		"<i>Пример: @username или user123</i>"
+
+	telegram.SendMessage(botUrl, chatId, message, telegram.CreateCancelKeyboard())
+
+	newState := states.SetEnterUserTgId()
+	return newState.SetTempUserData(tempData)
+}
+
+func SetUserTgId(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
+	tgId := strings.TrimSpace(update.Message.Text)
+
+	// Валидация TgId
+	if len(tgId) < 3 {
+		telegram.SendMessage(botUrl, chatId, "❌ <b>Ошибка ввода</b>\n\n"+
+			"Telegram ID должен содержать минимум 3 символа.\n"+
+			"Попробуйте еще раз:", telegram.CreateCancelKeyboard())
+		return states.SetEnterUserTgId()
+	}
+
+	tempData := state.GetTempUserData()
+	tempData.TgId = tgId
+
 	message := fmt.Sprintf("✅ <b>Подтверждение регистрации</b>\n\n"+
 		"📋 <b>Проверьте данные:</b>\n\n"+
-		"👤 <b>ФИО:</b> %s\n\n"+
-		"❓ <b>Зарегистрироваться с этими данными?</b>", tempData.Name)
+		"👤 <b>ФИО:</b> %s\n"+
+		"📱 <b>Telegram ID:</b> %s\n"+
+		"✅ <b>Согласие на обработку данных:</b> Да\n\n"+
+		"❓ <b>Зарегистрироваться с этими данными?</b>",
+		tempData.Name, tempData.TgId)
 
 	telegram.SendMessage(botUrl, chatId, message, telegram.CreateConfirmationKeyboard())
 
@@ -244,10 +283,20 @@ func SetUserName(botUrl string, chatId int, update telegram.Update, repo databas
 }
 
 func ConfirmUserRegistration(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, tempData *states.TempUserData) states.State {
-	logger.UserInfo(chatId, "Создание пользователя: %s", tempData.Name)
+	// Проверяем согласие на обработку данных
+	if !tempData.DataConsent {
+		telegram.EditMessage(botUrl, chatId, messageId,
+			"❌ <b>Регистрация отменена</b>\n\n"+
+				"Для регистрации необходимо согласие на обработку персональных данных.",
+			telegram.CreateBaseKeyboard())
+		return states.SetStartKeyboard()
+	}
+
+	logger.UserInfo(chatId, "Создание пользователя: %s (TgId: %s)", tempData.Name, tempData.TgId)
 
 	user := &database.User{
 		Name:     tempData.Name,
+		TgId:     tempData.TgId,
 		ChatId:   chatId,
 		IsActive: true,
 	}
@@ -258,7 +307,7 @@ func ConfirmUserRegistration(botUrl string, chatId int, messageId int, repo data
 		return sendErrorMessage(botUrl, chatId, messageId, repo, err)
 	}
 
-	logger.UserInfo(chatId, "Пользователь создан: %s (ID: %d)", tempData.Name, id)
+	logger.UserInfo(chatId, "Пользователь создан: %s (ID: %d, TgId: %s)", tempData.Name, id, tempData.TgId)
 	telegram.EditMessage(botUrl, chatId, messageId,
 		"🎉 <b>Регистрация завершена!</b>\n"+
 			"Добро пожаловать, "+tempData.Name+"!", telegram.CreateStartKeyboard(chatId, repo))
@@ -269,9 +318,14 @@ func StartTrainingRegistration(botUrl string, chatId int, messageId int, repo da
 	user, err := repo.GetUserByChatId(chatId)
 	if err != nil || user == nil {
 		telegram.EditMessage(botUrl, chatId, messageId, "🏃‍♂️ <b>Запись на тренировку</b>\n\n"+
-			"📝 Введите ваше ФИО\n"+
-			"<i>Пример: Иванов Иван Иванович</i>", telegram.CreateCancelKeyboard())
-		return states.SetEnterUserName()
+			"📋 <b>Согласие на обработку персональных данных</b>\n\n"+
+			"Для регистрации необходимо ваше согласие на обработку персональных данных.\n\n"+
+			"<i>Нажимая \"Согласен\", вы подтверждаете, что даете согласие на обработку ваших персональных данных в соответствии с политикой конфиденциальности.</i>",
+			telegram.CreateDataConsentKeyboard())
+
+		tempData := &states.TempUserData{}
+		state := states.SetUserDataConsent()
+		return state.SetTempUserData(tempData)
 	}
 
 	tracks, err := repo.GetTracksWithActiveTrainings()
@@ -389,9 +443,10 @@ func ExecuteTrainingRegistration(botUrl string, chatId int, messageId int, train
 
 		notificationMessage := fmt.Sprintf("🔔 <b>Новая заявка</b>\n"+
 			"👤 %s\n"+
+			"📱 %s\n"+
 			"🏃‍♂️ %s\n"+
 			"📅 %s",
-			user.Name, trackName, training.StartTime.Format("02.01.2006 15:04"))
+			user.Name, user.TgId, trackName, training.StartTime.Format("02.01.2006 15:04"))
 
 		telegram.SendMessage(botUrl, trainer.ChatId, notificationMessage, telegram.CreateTrainingApprovalKeyboard(regId))
 	}
@@ -776,6 +831,7 @@ func ProcessTrainingSuggestion(botUrl string, chatId int, update telegram.Update
 		// Создаем нового пользователя
 		newUser := &database.User{
 			Name:     userName,
+			TgId:     fmt.Sprintf("user_%d", chatId),
 			ChatId:   chatId,
 			IsActive: true,
 		}
@@ -792,6 +848,7 @@ func ProcessTrainingSuggestion(botUrl string, chatId int, update telegram.Update
 		user = &database.User{
 			ID:       userId,
 			Name:     userName,
+			TgId:     fmt.Sprintf("user_%d", chatId),
 			ChatId:   chatId,
 			IsActive: true,
 		}
@@ -818,4 +875,22 @@ func ProcessTrainingSuggestion(botUrl string, chatId int, update telegram.Update
 		"⏰ Мы рассмотрим его в ближайшее время.\n\n"+
 		"💡 <i>Спасибо за ваше предложение!</i>", telegram.CreateBaseKeyboard())
 	return states.SetStartKeyboard()
+}
+
+func HandleDataConsentYes(botUrl string, chatId int, messageId int, repo database.ContentRepositoryInterface, state states.State) states.State {
+	if state.Type != states.StateSetUserDataConsent {
+		logger.UserError(chatId, "Неверное состояние для обработки согласия: %s", state.Type)
+		return states.SetError()
+	}
+
+	tempData := state.GetTempUserData()
+	tempData.DataConsent = true
+
+	message := "👤 <b>Введите ваше ФИО</b>\n\n" +
+		"<i>Пример: Иванов Иван Иванович</i>"
+
+	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateCancelKeyboard())
+
+	newState := states.SetEnterUserName()
+	return newState.SetTempUserData(tempData)
 }

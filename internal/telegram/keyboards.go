@@ -229,6 +229,10 @@ func CreateTrainingsListWithActionsKeyboard(trainings []database.Training) inlin
 		}
 		buttons = append(buttons, []inlineKeyboardButton{
 			{Text: fmt.Sprintf("%d. %s %s", i+1, statusIcon, training.StartTime.Format("02.01 15:04")), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
+		})
+		// Кнопки действий в отдельной строке
+		buttons = append(buttons, []inlineKeyboardButton{
+			{Text: "👥", CallbackData: fmt.Sprintf("viewRegistrations_%d", training.ID)},
 			{Text: "🗑️", CallbackData: fmt.Sprintf("deleteTraining_%d", training.ID)},
 		})
 	}
@@ -265,6 +269,19 @@ func CreateInfoKeyboard() inlineKeyboardMarkup {
 
 func CreateConfirmationKeyboard() inlineKeyboardMarkup {
 	return createConfirmationKeyboard()
+}
+
+func CreateDataConsentKeyboard() inlineKeyboardMarkup {
+	return inlineKeyboardMarkup{
+		InlineKeyboard: [][]inlineKeyboardButton{
+			{
+				{Text: "✅ Согласен", CallbackData: "dataConsentYes"},
+			},
+			{
+				{Text: "❌ Отмена", CallbackData: "cancel"},
+			},
+		},
+	}
 }
 
 func CreateTrainerEditKeyboard(trainerId uint) inlineKeyboardMarkup {

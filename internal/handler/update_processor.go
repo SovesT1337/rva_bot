@@ -137,6 +137,7 @@ func isTextInputState(stateType states.StateType) bool {
 		states.StateEditTrackName:              true,
 		states.StateEditTrackInfo:              true,
 		states.StateSetUserName:                true,
+		states.StateSetUserTgId:                true,
 		states.StateSetTrainingStartTime:       true,
 		states.StateSetTrainingEndTime:         true,
 		states.StateSetTrainingMaxParticipants: true,
@@ -219,6 +220,7 @@ func (up *UpdateProcessor) handleTextInput(update telegram.Update, chatId int, s
 			return commands.SetEditTrackInfo(up.botUrl, chatId, update, up.repo, state.GetID())
 		},
 		states.StateSetUserName:          func() states.State { return commands.SetUserName(up.botUrl, chatId, update, up.repo, state) },
+		states.StateSetUserTgId:          func() states.State { return commands.SetUserTgId(up.botUrl, chatId, update, up.repo, state) },
 		states.StateSetTrainingStartTime: func() states.State { return commands.SetTrainingStartTime(up.botUrl, chatId, update, up.repo, state) },
 		states.StateSetTrainingEndTime:   func() states.State { return commands.SetTrainingEndTime(up.botUrl, chatId, update, up.repo, state) },
 		states.StateSetTrainingMaxParticipants: func() states.State {

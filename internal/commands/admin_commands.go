@@ -1104,3 +1104,107 @@ func formatTrainingRequestsList(requests []database.TrainingRequest, repo databa
 
 	return builder.String()
 }
+
+// ViewTrainingRegistrations - просмотр зарегистрированных пользователей на тренировку
+func ViewTrainingRegistrations(botUrl string, chatId int, messageId int, trainingId uint, repo database.ContentRepositoryInterface) states.State {
+	// Получаем информацию о тренировке
+	training, err := repo.GetTrainingById(trainingId)
+	if err != nil || training == nil {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Тренировка не найдена</b>\n\n"+
+			"🔍 Возможно, тренировка была удалена.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	// Получаем информацию о тренере и трассе
+	trainer, _ := repo.GetTrainerByID(training.TrainerID)
+	track, _ := repo.GetTrackByID(training.TrackID)
+
+	trainerName := "❓ Неизвестный"
+	if trainer != nil {
+		trainerName = trainer.Name
+	}
+
+	trackName := "❓ Неизвестная"
+	if track != nil {
+		trackName = track.Name
+	}
+
+	// Получаем регистрации
+	registrations, err := repo.GetTrainingRegistrationsByTrainingID(trainingId)
+	if err != nil {
+		telegram.EditMessage(botUrl, chatId, messageId, "❌ <b>Ошибка загрузки регистраций</b>\n\n"+
+			"Попробуйте позже.", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	// Формируем сообщение
+	message := fmt.Sprintf("👥 <b>Зарегистрированные на тренировку</b>\n\n"+
+		"🏃‍♂️ <b>Тренировка:</b> %s\n"+
+		"👨‍🏫 <b>Тренер:</b> %s\n"+
+		"📅 <b>Дата:</b> %s\n"+
+		"⏰ <b>Время:</b> %s - %s\n"+
+		"👥 <b>Мест:</b> %d/%d\n\n",
+		trackName, trainerName,
+		training.StartTime.Format("02.01.2006"),
+		training.StartTime.Format("15:04"), training.EndTime.Format("15:04"),
+		len(registrations), training.MaxParticipants)
+
+	if len(registrations) == 0 {
+		message += "📭 <b>Нет зарегистрированных участников</b>"
+	} else {
+		message += formatTrainingRegistrationsList(registrations, repo)
+	}
+
+	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateBackToScheduleMenuKeyboard())
+	return states.SetAdminKeyboard()
+}
+
+// formatTrainingRegistrationsList - форматирование списка регистраций
+func formatTrainingRegistrationsList(registrations []database.TrainingRegistration, repo database.ContentRepositoryInterface) string {
+	if len(registrations) == 0 {
+		return "📭 Нет регистраций"
+	}
+
+	var builder strings.Builder
+	for i, reg := range registrations {
+		// Получаем информацию о пользователе
+		user, err := repo.GetUserByID(reg.UserID)
+		userName := "❓ Неизвестный"
+		userTgId := ""
+		if err == nil && user != nil {
+			userName = user.Name
+			userTgId = user.TgId
+		}
+
+		// Определяем статус и иконку
+		statusIcon := "⏳"
+		statusText := "Ожидает"
+		switch reg.Status {
+		case "confirmed":
+			statusIcon = "✅"
+			statusText = "Подтвержден"
+		case "rejected":
+			statusIcon = "❌"
+			statusText = "Отклонен"
+		case "pending":
+			statusIcon = "⏳"
+			statusText = "Ожидает"
+		}
+
+		// Форматируем дату регистрации
+		dateStr := reg.CreatedAt.Format("02.01 15:04")
+
+		// Создаем запись
+		builder.WriteString(fmt.Sprintf("%d. %s <b>%s</b>\n",
+			i+1, statusIcon, userName))
+
+		if userTgId != "" {
+			builder.WriteString(fmt.Sprintf("   📱 %s\n", userTgId))
+		}
+
+		builder.WriteString(fmt.Sprintf("   📊 %s | 📅 %s\n\n",
+			statusText, dateStr))
+	}
+
+	return builder.String()
+}

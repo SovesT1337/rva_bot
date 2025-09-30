@@ -27,6 +27,7 @@ type Admin struct {
 type User struct {
 	ID        uint `gorm:"primaryKey"`
 	Name      string
+	TgId      string
 	ChatId    int `gorm:"uniqueIndex"`
 	IsActive  bool
 	CreatedAt time.Time

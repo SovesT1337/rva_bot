@@ -28,6 +28,8 @@ const (
 	StateConfirmTrackDelete = "StateConfirmTrackDelete"
 
 	StateSetUserName             = "StateSetUserName"
+	StateSetUserTgId             = "StateSetUserTgId"
+	StateSetUserDataConsent      = "StateSetUserDataConsent"
 	StateConfirmUserRegistration = "StateConfirmUserRegistration"
 
 	StateSetTrainingTrack           = "StateSetTrainingTrack"
@@ -65,7 +67,9 @@ type TempTrackData struct {
 }
 
 type TempUserData struct {
-	Name string
+	Name        string
+	TgId        string
+	DataConsent bool
 }
 
 type TempTrainingData struct {
@@ -250,6 +254,14 @@ func SetConfirmTrackDelete(id uint) State {
 
 func SetEnterUserName() State {
 	return NewState(StateSetUserName, nil)
+}
+
+func SetEnterUserTgId() State {
+	return NewState(StateSetUserTgId, nil)
+}
+
+func SetUserDataConsent() State {
+	return NewState(StateSetUserDataConsent, nil)
 }
 
 func SetConfirmUserRegistration() State {

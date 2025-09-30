@@ -39,17 +39,19 @@ func (ch *CallbackHandler) HandleCallback(query *telegram.CallbackQuery, state s
 
 	logger.UserInfo(chatId, "Callback %s", data)
 
-	prefix, id := ch.parseCallbackData(data, chatId)
-	if prefix == "" && id == -1 {
-		return states.SetError()
-	}
-
-	// Обрабатываем специальные случаи
+	// Обрабатываем специальные случаи ПЕРЕД парсингом
 	switch data {
 	case "confirm":
 		return ch.handleConfirmAction(chatId, messageId, state)
 	case "cancel":
 		return ch.handleCancelAction(chatId, messageId, state)
+	case "dataConsentYes":
+		return commands.HandleDataConsentYes(ch.botUrl, chatId, messageId, ch.repo, state)
+	}
+
+	prefix, id := ch.parseCallbackData(data, chatId)
+	if prefix == "" && id == -1 {
+		return states.SetError()
 	}
 
 	// Обрабатываем callback'и с префиксами
@@ -123,6 +125,9 @@ func (ch *CallbackHandler) handlePrefixedCallback(prefix string, id int, chatId,
 			return commands.SetTrainingTrack(ch.botUrl, chatId, messageId, uint(id), ch.repo, state)
 		},
 		"editTraining": func() states.State { return commands.EditTraining(ch.botUrl, chatId, messageId, uint(id), ch.repo) },
+		"viewRegistrations": func() states.State {
+			return commands.ViewTrainingRegistrations(ch.botUrl, chatId, messageId, uint(id), ch.repo)
+		},
 		"toggleTrainingStatus": func() states.State {
 			return commands.ToggleTrainingStatus(ch.botUrl, chatId, messageId, uint(id), ch.repo)
 		},
