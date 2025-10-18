@@ -228,7 +228,7 @@ func CreateTrainingsListWithActionsKeyboard(trainings []database.Training) inlin
 			statusIcon = "🔴"
 		}
 		buttons = append(buttons, []inlineKeyboardButton{
-			{Text: fmt.Sprintf("%d. %s %s", i+1, statusIcon, training.StartTime.Format("02.01 15:04")), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
+			{Text: fmt.Sprintf("%d. %s %s (%s)", i+1, statusIcon, training.StartTime.Format("02.01 15:04"), training.CarCategory), CallbackData: fmt.Sprintf("editTraining_%d", training.ID)},
 		})
 		// Кнопки действий в отдельной строке
 		buttons = append(buttons, []inlineKeyboardButton{
@@ -414,6 +414,9 @@ func CreateTrainingEditKeyboard(trainingId uint) inlineKeyboardMarkup {
 				{Text: "👥 Изменить участников", CallbackData: fmt.Sprintf("editTrainingParticipants_%d", trainingId)},
 			},
 			{
+				{Text: "🚗 Категория", CallbackData: fmt.Sprintf("editTrainingCategory_%d", trainingId)},
+			},
+			{
 				{Text: "🔄 Активировать/Деактивировать", CallbackData: fmt.Sprintf("toggleTrainingStatus_%d", trainingId)},
 			},
 			{
@@ -465,7 +468,7 @@ func CreateTrainingTimeSelectionKeyboard(trainings []database.Training) inlineKe
 
 	for _, t := range trainings {
 		buttons = append(buttons, []inlineKeyboardButton{{
-			Text:         t.StartTime.Format("02.01 15:04"),
+			Text:         fmt.Sprintf("%s (%s)", t.StartTime.Format("02.01 15:04"), t.CarCategory),
 			CallbackData: fmt.Sprintf("selectTrainingTimeForRegistration_%d", t.ID),
 		}})
 	}

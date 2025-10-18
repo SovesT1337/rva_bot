@@ -664,14 +664,33 @@ func SetTrainingMaxParticipants(botUrl string, chatId int, update telegram.Updat
 		return newState
 	}
 
+	// Переходим к сбору категории машины
+	telegram.SendMessage(botUrl, chatId, "🚗 Введите категорию машин (например: KZ, OK, Rotax)\n\n"+
+		"💡 <i>Оставьте пустым для 'N/A'</i>", telegram.CreateBackToScheduleMenuKeyboard())
+
+	newState := states.SetSetTrainingCarCategory(0)
+	newState.Data["trackId"] = state.Data["trackId"]
+	newState.Data["trainerId"] = state.Data["trainerId"]
+	newState.Data["startTime"] = state.Data["startTime"]
+	newState.Data["endTime"] = state.Data["endTime"]
+	newState.Data["maxParticipants"] = maxParticipants
+	return newState
+}
+
+func SetTrainingCarCategory(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, state states.State) states.State {
+	carCategory := strings.TrimSpace(update.Message.Text)
+	if carCategory == "" {
+		carCategory = "N/A"
+	}
+
 	// Получаем данные из состояния
 	trackId, ok1 := state.Data["trackId"].(uint)
 	trainerId, ok2 := state.Data["trainerId"].(uint)
 	startTime, ok3 := state.Data["startTime"].(string)
 	endTime, ok4 := state.Data["endTime"].(string)
-
-	if !ok1 || !ok2 || !ok3 || !ok4 {
-		logger.AdminError(chatId, "Неверные типы данных в состоянии для создания тренировки")
+	maxParticipants, ok5 := state.Data["maxParticipants"].(int)
+	if !ok1 || !ok2 || !ok3 || !ok4 || !ok5 {
+		logger.AdminError(chatId, "Неверные типы данных в состоянии для создания тренировки (car category)")
 		return states.SetError()
 	}
 
@@ -682,6 +701,7 @@ func SetTrainingMaxParticipants(botUrl string, chatId int, update telegram.Updat
 		StartTime:       startTime,
 		EndTime:         endTime,
 		MaxParticipants: maxParticipants,
+		CarCategory:     carCategory,
 	}
 
 	// Получаем информацию о тренере и трассе для отображения
@@ -701,11 +721,12 @@ func SetTrainingMaxParticipants(botUrl string, chatId int, update telegram.Updat
 	message := fmt.Sprintf("📅 <b>Подтверждение создания тренировки</b>\n\n"+
 		"👨‍🏫 <b>Тренер:</b> %s\n"+
 		"🏁 <b>Трасса:</b> %s\n"+
+		"🚗 <b>Категория:</b> %s\n"+
 		"🕐 <b>Начало:</b> %s\n"+
 		"🕕 <b>Окончание:</b> %s\n"+
 		"👥 <b>Макс. участников:</b> %d\n\n"+
 		"❓ <b>Создать тренировку?</b>",
-		trainerName, trackName, startTime, endTime, maxParticipants)
+		trainerName, trackName, carCategory, startTime, endTime, maxParticipants)
 
 	telegram.SendMessage(botUrl, chatId, message, telegram.CreateConfirmationKeyboard())
 	return states.SetConfirmTrainingCreation().SetTempTrainingData(tempData)
@@ -753,6 +774,7 @@ func ConfirmTrainingCreation(botUrl string, chatId int, messageId int, repo data
 		StartTime:       startTime,
 		EndTime:         endTime,
 		MaxParticipants: tempData.MaxParticipants,
+		CarCategory:     tempData.CarCategory,
 		IsActive:        true,
 	}
 
@@ -890,13 +912,43 @@ func EditTraining(botUrl string, chatId int, messageId int, trainingId uint, rep
 
 	message := fmt.Sprintf("✏️ <b>Редактирование тренировки</b>\n\n"+
 		"📅 <b>Дата:</b> %s\n"+
+		"🚗 <b>Категория:</b> %s\n"+
 		"👥 <b>Макс. участников:</b> %d\n"+
 		"🔄 <b>Статус:</b> %s\n\n"+
 		"🎯 <b>Доступные действия:</b>",
-		training.StartTime.Format("2006-01-02 15:04"), training.MaxParticipants,
+		training.StartTime.Format("2006-01-02 15:04"), training.CarCategory, training.MaxParticipants,
 		map[bool]string{true: "Активна", false: "Неактивна"}[training.IsActive])
 
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainingEditKeyboard(trainingId))
+	return states.SetAdminKeyboard()
+}
+
+func EditTrainingCategory(botUrl string, chatId int, messageId int, trainingId uint, repo database.ContentRepositoryInterface) states.State {
+	telegram.EditMessage(botUrl, chatId, messageId, "🚗 <b>Редактирование категории машин</b>\n\n"+
+		"📝 Введите новую категорию (пример: KZ, OK, Rotax).\n"+
+		"💡 Оставьте пустым для 'N/A'", telegram.CreateBackToScheduleMenuKeyboard())
+	return states.SetEditTrainingCarCategory(trainingId)
+}
+
+func SetEditTrainingCategory(botUrl string, chatId int, update telegram.Update, repo database.ContentRepositoryInterface, trainingId uint) states.State {
+	newCategory := strings.TrimSpace(update.Message.Text)
+	if newCategory == "" {
+		newCategory = "N/A"
+	}
+
+	training, err := repo.GetTrainingById(trainingId)
+	if err != nil || training == nil {
+		telegram.SendMessage(botUrl, chatId, "❌ <b>Тренировка не найдена</b>", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	training.CarCategory = newCategory
+	if err := repo.UpdateTraining(trainingId, training); err != nil {
+		telegram.SendMessage(botUrl, chatId, "❌ <b>Ошибка сохранения</b>", telegram.CreateBackToScheduleMenuKeyboard())
+		return states.SetAdminKeyboard()
+	}
+
+	telegram.SendMessage(botUrl, chatId, "✅ <b>Категория обновлена</b>", telegram.CreateBackToScheduleMenuKeyboard())
 	return states.SetAdminKeyboard()
 }
 
@@ -1028,8 +1080,8 @@ func formatTrainingsListForAdmin(trainings []database.Training, repo database.Co
 		// Создаем компактную запись
 		builder.WriteString(fmt.Sprintf("%d. %s <b>%s %s-%s</b>\n",
 			i+1, statusIcon, dateStr, startTimeStr, endTimeStr))
-		builder.WriteString(fmt.Sprintf("   👨‍🏫 %s | 🏁 %s | 👥 %d\n\n",
-			trainerName, trackName, training.MaxParticipants))
+		builder.WriteString(fmt.Sprintf("   👨‍🏫 %s | 🏁 %s | 🚗 %s | 👥 %d\n\n",
+			trainerName, trackName, training.CarCategory, training.MaxParticipants))
 	}
 
 	return builder.String()
@@ -1140,11 +1192,12 @@ func ViewTrainingRegistrations(botUrl string, chatId int, messageId int, trainin
 	// Формируем сообщение
 	message := fmt.Sprintf("👥 <b>Зарегистрированные на тренировку</b>\n\n"+
 		"🏃‍♂️ <b>Тренировка:</b> %s\n"+
+		"🚗 <b>Категория:</b> %s\n"+
 		"👨‍🏫 <b>Тренер:</b> %s\n"+
 		"📅 <b>Дата:</b> %s\n"+
 		"⏰ <b>Время:</b> %s - %s\n"+
 		"👥 <b>Мест:</b> %d/%d\n\n",
-		trackName, trainerName,
+		trackName, training.CarCategory, trainerName,
 		training.StartTime.Format("02.01.2006"),
 		training.StartTime.Format("15:04"), training.EndTime.Format("15:04"),
 		len(registrations), training.MaxParticipants)

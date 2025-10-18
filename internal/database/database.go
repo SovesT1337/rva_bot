@@ -75,6 +75,11 @@ func (d *Database) migrate() error {
 		}
 	}
 
+	// Backfill CarCategory for existing trainings to 'N/A'
+	if err := d.db.Model(&Training{}).Where("car_category IS NULL OR car_category = ''").Update("car_category", "N/A").Error; err != nil {
+		return fmt.Errorf("ошибка бэкфилла car_category: %w", err)
+	}
+
 	return nil
 }
 

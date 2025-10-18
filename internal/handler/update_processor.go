@@ -141,6 +141,8 @@ func isTextInputState(stateType states.StateType) bool {
 		states.StateSetTrainingStartTime:       true,
 		states.StateSetTrainingEndTime:         true,
 		states.StateSetTrainingMaxParticipants: true,
+		states.StateSetTrainingCarCategory:     true,
+		states.StateEditTrainingCarCategory:    true,
 		states.StateSuggestTraining:            true,
 	}
 	return textInputStates[stateType]
@@ -225,6 +227,12 @@ func (up *UpdateProcessor) handleTextInput(update telegram.Update, chatId int, s
 		states.StateSetTrainingEndTime:   func() states.State { return commands.SetTrainingEndTime(up.botUrl, chatId, update, up.repo, state) },
 		states.StateSetTrainingMaxParticipants: func() states.State {
 			return commands.SetTrainingMaxParticipants(up.botUrl, chatId, update, up.repo, state)
+		},
+		states.StateSetTrainingCarCategory: func() states.State {
+			return commands.SetTrainingCarCategory(up.botUrl, chatId, update, up.repo, state)
+		},
+		states.StateEditTrainingCarCategory: func() states.State {
+			return commands.SetEditTrainingCategory(up.botUrl, chatId, update, up.repo, state.GetID())
 		},
 		states.StateSuggestTraining: func() states.State {
 			return commands.ProcessTrainingSuggestion(up.botUrl, chatId, update, up.repo, state)

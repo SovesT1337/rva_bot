@@ -49,6 +49,7 @@ type Training struct {
 	StartTime       time.Time
 	EndTime         time.Time
 	MaxParticipants int
+	CarCategory     string `gorm:"type:text;default:N/A"`
 	IsActive        bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

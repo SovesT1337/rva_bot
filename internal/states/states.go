@@ -37,10 +37,14 @@ const (
 	StateSetTrainingStartTime       = "StateSetTrainingStartTime"
 	StateSetTrainingEndTime         = "StateSetTrainingEndTime"
 	StateSetTrainingMaxParticipants = "StateSetTrainingMaxParticipants"
+	StateSetTrainingCarCategory     = "StateSetTrainingCarCategory"
 	StateConfirmTrainingCreation    = "StateConfirmTrainingCreation"
 
 	StateConfirmTrainingRegistration = "StateConfirmTrainingRegistration"
 	StateConfirmTrainingDelete       = "StateConfirmTrainingDelete"
+
+	// Editing fields for existing training
+	StateEditTrainingCarCategory = "StateEditTrainingCarCategory"
 
 	StateSelectTrackForRegistration        = "StateSelectTrackForRegistration"
 	StateSelectTrainerForRegistration      = "StateSelectTrainerForRegistration"
@@ -78,6 +82,7 @@ type TempTrainingData struct {
 	StartTime       string
 	EndTime         string
 	MaxParticipants int
+	CarCategory     string
 }
 
 type TempRegistrationData struct {
@@ -288,6 +293,10 @@ func SetSetTrainingMaxParticipants(id uint) State {
 	return NewState(StateSetTrainingMaxParticipants, map[string]interface{}{"id": id})
 }
 
+func SetSetTrainingCarCategory(id uint) State {
+	return NewState(StateSetTrainingCarCategory, map[string]interface{}{"id": id})
+}
+
 func SetConfirmTrainingCreation() State {
 	return NewState(StateConfirmTrainingCreation, nil)
 }
@@ -298,6 +307,10 @@ func SetConfirmTrainingRegistration(trainingId uint) State {
 
 func SetConfirmTrainingDelete(trainingId uint) State {
 	return NewState(StateConfirmTrainingDelete, map[string]interface{}{"id": trainingId})
+}
+
+func SetEditTrainingCarCategory(trainingId uint) State {
+	return NewState(StateEditTrainingCarCategory, map[string]interface{}{"id": trainingId})
 }
 
 func SetSelectTrackForRegistration() State {

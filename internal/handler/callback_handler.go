@@ -124,7 +124,11 @@ func (ch *CallbackHandler) handlePrefixedCallback(prefix string, id int, chatId,
 		"selectTrackForTraining": func() states.State {
 			return commands.SetTrainingTrack(ch.botUrl, chatId, messageId, uint(id), ch.repo, state)
 		},
-		"editTraining": func() states.State { return commands.EditTraining(ch.botUrl, chatId, messageId, uint(id), ch.repo) },
+		"editTrainingDate": func() states.State { return state },
+		"editTraining":     func() states.State { return commands.EditTraining(ch.botUrl, chatId, messageId, uint(id), ch.repo) },
+		"editTrainingCategory": func() states.State {
+			return commands.EditTrainingCategory(ch.botUrl, chatId, messageId, uint(id), ch.repo)
+		},
 		"viewRegistrations": func() states.State {
 			return commands.ViewTrainingRegistrations(ch.botUrl, chatId, messageId, uint(id), ch.repo)
 		},

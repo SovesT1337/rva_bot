@@ -401,11 +401,12 @@ func ConfirmTrainingRegistration(botUrl string, chatId int, messageId int, train
 	message := fmt.Sprintf("✅ <b>Подтверждение записи на тренировку</b>\n\n"+
 		"📋 <b>Детали тренировки:</b>\n\n"+
 		"🏃‍♂️ <b>Тренировка:</b> %s\n"+
+		"🚗 <b>Категория:</b> %s\n"+
 		"👨‍🏫 <b>Тренер:</b> %s\n"+
 		"📅 <b>Дата и время:</b> %s\n"+
 		"👥 <b>Свободных мест:</b> %d\n\n"+
 		"❓ <b>Подтвердить запись на тренировку?</b>",
-		trackName, trainerName, training.StartTime.Format("02.01.2006 15:04"), training.MaxParticipants-registeredCount)
+		trackName, training.CarCategory, trainerName, training.StartTime.Format("02.01.2006 15:04"), training.MaxParticipants-registeredCount)
 
 	telegram.EditMessage(botUrl, chatId, messageId, message, telegram.CreateTrainingRegistrationConfirmationKeyboard(trainingId))
 	return states.SetConfirmTrainingRegistration(trainingId)
@@ -753,6 +754,7 @@ func formatTrainingsListForUsers(trainings []database.Training, repo database.Co
 		}
 
 		builder.WriteString(fmt.Sprintf("🏃‍♂️ <b>%d. Тренировка</b>\n", i+1))
+		builder.WriteString(fmt.Sprintf("🚗 <b>Категория:</b> %s\n", training.CarCategory))
 		builder.WriteString(fmt.Sprintf("👨‍🏫 <b>Тренер:</b> %s\n", trainerName))
 		builder.WriteString(fmt.Sprintf("🏁 <b>Трасса:</b> %s\n", trackName))
 		builder.WriteString(fmt.Sprintf("📅 <b>Дата и время:</b> %s\n", training.StartTime.Format("02.01.2006 15:04")))
