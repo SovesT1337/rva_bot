@@ -658,27 +658,6 @@ func ApproveTrainingRegistration(botUrl string, chatId int, messageId int, regis
 		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
 	}
 
-	// Уведомляем администраторов о подтвержденной записи
-	admins, err := repo.GetAdmins()
-	if err == nil {
-		trainerName := "Неизвестный тренер"
-		if trainer != nil {
-			trainerName = trainer.Name
-		}
-		adminMessage := fmt.Sprintf("🔔 <b>Подтверждена запись на тренировку</b>\n\n"+
-			"🏃‍♂️ <b>Тренировка:</b> %s\n"+
-			"🚗 <b>Категория:</b> %s\n"+
-			"👨‍🏫 <b>Тренер:</b> %s\n"+
-			"📅 <b>Дата и время:</b> %s",
-			trackName, training.CarCategory, trainerName, training.StartTime.Format("02.01.2006 15:04"))
-
-		for _, admin := range admins {
-			if admin.IsActive && admin.ChatId != 0 {
-				telegram.SendMessage(botUrl, admin.ChatId, adminMessage, telegram.CreateBaseKeyboard())
-			}
-		}
-	}
-
 	logger.UserInfo(chatId, "Регистрация %d одобрена", registrationId)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Заявка подтверждена</b>", telegram.CreateBaseKeyboard())
 	return states.SetStartKeyboard()
