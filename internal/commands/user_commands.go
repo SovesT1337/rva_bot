@@ -647,52 +647,49 @@ func ApproveTrainingRegistration(botUrl string, chatId int, messageId int, regis
 		trackName = track.Name
 	}
 
-    if user != nil {
-        userMessage := fmt.Sprintf("🎉 <b>Заявка на тренировку одобрена!</b>\n\n"+
-            "✅ <b>Ваша заявка на тренировку была подтверждена тренером.</b>\n\n"+
-            "🏃‍♂️ <b>Тренировка:</b> %s\n"+
-            "🚗 <b>Категория:</b> %s\n"+
-            "📅 <b>Дата и время:</b> %s\n\n"+
-            "💡 <b>До встречи на тренировке!</b>",
-            trackName, training.CarCategory, training.StartTime.Format("02.01.2006 15:04"))
+	if user != nil {
+		userMessage := fmt.Sprintf("🎉 <b>Заявка на тренировку одобрена!</b>\n\n"+
+			"✅ <b>Ваша заявка на тренировку была подтверждена тренером.</b>\n\n"+
+			"🏃‍♂️ <b>Тренировка:</b> %s\n"+
+			"🚗 <b>Категория:</b> %s\n"+
+			"📅 <b>Дата и время:</b> %s\n\n"+
+			"💡 <b>До встречи на тренировке!</b>",
+			trackName, training.CarCategory, training.StartTime.Format("02.01.2006 15:04"))
 
-        telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
-    }
+		telegram.SendMessage(botUrl, user.ChatId, userMessage, telegram.CreateBaseKeyboard())
+	}
 
-    // Notify all active admins
-    admins, err := repo.GetAdmins()
-    if err == nil {
-        trainerName := "—"
-        if trainer != nil {
-            trainerName = trainer.Name
-        }
+	// Notify all active admins
+	admins, err := repo.GetAdmins()
+	if err == nil {
+		trainerName := "—"
+		if trainer != nil {
+			trainerName = trainer.Name
+		}
 
-        userName := "—"
-        userTg := ""
-        userChat := 0
-        if user != nil {
-            userName = user.Name
-            userTg = user.TgId
-            userChat = user.ChatId
-        }
+		userName := "—"
+		userTg := ""
+		if user != nil {
+			userName = user.Name
+			userTg = user.TgId
+		}
 
-        adminMessage := fmt.Sprintf("✅ <b>Одобрена запись на тренировку</b>\n\n"+
-            "🏁 <b>Трасса:</b> %s\n"+
-            "🚗 <b>Категория:</b> %s\n"+
-            "👨‍🏫 <b>Тренер:</b> %s\n"+
-            "📅 <b>Дата и время:</b> %s\n\n"+
-            "👤 <b>Пользователь:</b> %s\n"+
-            "📱 <b>Telegram:</b> %s\n"+
-            "🆔 <b>ChatID:</b> %d",
-            trackName, training.CarCategory, trainerName, training.StartTime.Format("02.01.2006 15:04"),
-            userName, userTg, userChat)
+		adminMessage := fmt.Sprintf("✅ <b>Одобрена запись на тренировку</b>\n\n"+
+			"🏁 <b>Трасса:</b> %s\n"+
+			"🚗 <b>Категория:</b> %s\n"+
+			"👨‍🏫 <b>Тренер:</b> %s\n"+
+			"📅 <b>Дата и время:</b> %s\n\n"+
+			"👤 <b>Пользователь:</b> %s\n"+
+			"📱 <b>Telegram:</b> %s",
+			trackName, training.CarCategory, trainerName, training.StartTime.Format("02.01.2006 15:04"),
+			userName, userTg)
 
-        for _, a := range admins {
-            if a.IsActive && a.ChatId != 0 {
-                telegram.SendMessage(botUrl, a.ChatId, adminMessage, telegram.CreateBackToAdminKeyboard())
-            }
-        }
-    }
+		for _, a := range admins {
+			if a.IsActive && a.ChatId != 0 {
+				telegram.SendMessage(botUrl, a.ChatId, adminMessage, telegram.CreateBackToAdminKeyboard())
+			}
+		}
+	}
 
 	logger.UserInfo(chatId, "Регистрация %d одобрена", registrationId)
 	telegram.EditMessage(botUrl, chatId, messageId, "✅ <b>Заявка подтверждена</b>", telegram.CreateBaseKeyboard())
